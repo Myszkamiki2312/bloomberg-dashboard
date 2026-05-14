@@ -60,66 +60,61 @@ export default function Home() {
         <StatusBar isDemo={isDemo} />
         <Ticker />
 
-        {/* ── Main resizable area ── */}
-        <PanelGroup direction="horizontal" className="flex-1 min-h-0" id="main-layout">
-          {/* Watchlist */}
-          <Panel defaultSize={14} minSize={8} maxSize={30}>
-            <P label="Watchlista"><Watchlist /></P>
-          </Panel>
+        {/* ── Outer vertical split: main ↕ bottom strip ── */}
+        <PanelGroup direction="vertical" className="flex-1 min-h-0" id="outer-layout">
 
-          <Handle direction="vertical" />
-
-          {/* Center column */}
-          <Panel defaultSize={68} minSize={40}>
-            <PanelGroup direction="vertical" id="center-layout">
-              {/* Chart */}
-              <Panel defaultSize={60} minSize={25}>
-                <P label="Wykres"><CandlestickChart /></P>
+          {/* Main area */}
+          <Panel defaultSize={72} minSize={40}>
+            <PanelGroup direction="horizontal" className="h-full" id="main-layout">
+              <Panel defaultSize={14} minSize={8} maxSize={30}>
+                <P label="Watchlista"><Watchlist /></P>
               </Panel>
-
-              <Handle direction="horizontal" />
-
-              {/* AI + Market */}
-              <Panel defaultSize={40} minSize={20}>
-                <PanelGroup direction="horizontal" id="bottom-center-layout">
-                  <Panel defaultSize={50} minSize={25}>
-                    <P label="AI Podsumowanie"><AIMarketSummary /></P>
+              <Handle direction="vertical" />
+              <Panel defaultSize={68} minSize={40}>
+                <PanelGroup direction="vertical" id="center-layout">
+                  <Panel defaultSize={60} minSize={25}>
+                    <P label="Wykres"><CandlestickChart /></P>
                   </Panel>
-                  <Handle direction="vertical" />
-                  <Panel defaultSize={50} minSize={25}>
-                    <P label="Rynek Globalny"><MarketOverview /></P>
+                  <Handle direction="horizontal" />
+                  <Panel defaultSize={40} minSize={20}>
+                    <PanelGroup direction="horizontal" id="bottom-center-layout">
+                      <Panel defaultSize={50} minSize={25}>
+                        <P label="AI Podsumowanie"><AIMarketSummary /></P>
+                      </Panel>
+                      <Handle direction="vertical" />
+                      <Panel defaultSize={50} minSize={25}>
+                        <P label="Rynek Globalny"><MarketOverview /></P>
+                      </Panel>
+                    </PanelGroup>
                   </Panel>
                 </PanelGroup>
+              </Panel>
+              <Handle direction="vertical" />
+              <Panel defaultSize={18} minSize={10} maxSize={35}>
+                <P label="Wiadomości"><NewsPanel /></P>
               </Panel>
             </PanelGroup>
           </Panel>
 
-          <Handle direction="vertical" />
+          <Handle direction="horizontal" />
 
-          {/* News */}
-          <Panel defaultSize={18} minSize={10} maxSize={35}>
-            <P label="Wiadomości"><NewsPanel /></P>
+          {/* Bottom strip */}
+          <Panel defaultSize={28} minSize={10} maxSize={55}>
+            <PanelGroup direction="horizontal" className="h-full" id="bottom-layout">
+              <Panel defaultSize={40} minSize={20}>
+                <P label="Screener"><MarketScreener /></P>
+              </Panel>
+              <Handle direction="vertical" />
+              <Panel defaultSize={35} minSize={20}>
+                <P label="Kalendarz"><EconomicCalendar /></P>
+              </Panel>
+              <Handle direction="vertical" />
+              <Panel defaultSize={25} minSize={15}>
+                <P label="Alerty"><PriceAlerts /></P>
+              </Panel>
+            </PanelGroup>
           </Panel>
-        </PanelGroup>
 
-        {/* ── Bottom strip — resizable ── */}
-        <PanelGroup
-          direction="horizontal"
-          id="bottom-layout"
-          className="shrink-0"
-          style={{ height: 200 }}
-        >
-          <Panel defaultSize={40} minSize={20}>
-            <P label="Screener"><MarketScreener /></P>
-          </Panel>
-          <Handle direction="vertical" />
-          <Panel defaultSize={35} minSize={20}>
-            <P label="Kalendarz"><EconomicCalendar /></P>
-          </Panel>
-          <Handle direction="vertical" />
-          <Panel defaultSize={25} minSize={15}>
-            <P label="Alerty"><PriceAlerts /></P>
-          </Panel>
         </PanelGroup>
 
         <NewsTickerBar />
