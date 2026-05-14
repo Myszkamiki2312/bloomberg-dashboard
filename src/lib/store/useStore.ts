@@ -78,7 +78,25 @@ export const useStore = create<AppStore>()(
             if (price == null) return
             const triggered =
               alert.direction === 'above' ? price >= alert.targetPrice : price <= alert.targetPrice
-            if (triggered) triggerAlert(alert.id)
+            if (!triggered) return
+
+            triggerAlert(alert.id)
+
+            // Browser notification
+            const label = alert.direction === 'above' ? 'przekroczyła ▲' : 'spadła poniżej ▼'
+            const body = `${alert.symbol} ${label} ${alert.targetPrice.toLocaleString('pl-PL')}`
+
+            if (typeof window !== 'undefined' && 'Notification' in window) {
+              if (Notification.permission === 'granted') {
+                new Notification(`🔔 Alert cenowy — ${alert.symbol}`, { body, icon: '/favicon.ico' })
+              } else if (Notification.permission === 'default') {
+                Notification.requestPermission().then(perm => {
+                  if (perm === 'granted') {
+                    new Notification(`🔔 Alert cenowy — ${alert.symbol}`, { body, icon: '/favicon.ico' })
+                  }
+                })
+              }
+            }
           })
       },
     }),

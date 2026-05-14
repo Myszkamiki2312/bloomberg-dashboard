@@ -178,7 +178,7 @@ export default function CandlestickChart() {
             {formatPrice(lastBar.close)}
           </span>
           <span className={clsx('font-bold num', isUp ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-            {isUp ? '▲' : '▼'} {formatPercent(Math.abs(overallChange) / 100).replace('+','').replace('-','')}
+            {isUp ? '▲' : '▼'} {Math.abs(overallChange).toFixed(2)}%
             <span className="text-[#333] font-normal ml-1">
               {TIMEFRAMES.find(t => t.days === days)?.label}
             </span>
