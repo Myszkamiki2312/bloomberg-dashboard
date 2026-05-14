@@ -9,11 +9,11 @@ import { SkeletonNewsItem } from '@/components/ui/Skeleton'
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 const CATEGORY_COLORS: Record<string, string> = {
-  makro: 'text-terminal-amber border-terminal-amber',
-  krypto: 'text-terminal-cyan border-terminal-cyan',
-  wyniki: 'text-terminal-blue border-terminal-blue',
-  tech: 'text-terminal-green border-terminal-green',
-  default: 'text-terminal-muted border-terminal-muted',
+  makro: 'text-[#ffaa00] border-[#ffaa00]',
+  krypto: 'text-[#00cccc] border-[#00cccc]',
+  wyniki: 'text-[#0099ff] border-[#0099ff]',
+  tech: 'text-[#00ff41] border-[#00ff41]',
+  default: 'text-[#555] border-[#444]',
 }
 
 export default function NewsPanel() {
@@ -28,12 +28,12 @@ export default function NewsPanel() {
           {Array.from({ length: 7 }).map((_, i) => <SkeletonNewsItem key={i} />)}
         </div>
       ) : (
-        <div className="flex flex-col divide-y divide-terminal-border overflow-auto">
+        <div className="flex flex-col divide-y divide-[#1c1c1c] overflow-auto">
           {news.map(item => (
             <NewsEntry key={item.id} item={item} />
           ))}
           {!news.length && (
-            <div className="p-3 text-terminal-muted text-xs">Brak dostępnych wiadomości.</div>
+            <div className="p-3 text-[#555] text-xs">Brak dostępnych wiadomości.</div>
           )}
         </div>
       )}
@@ -51,10 +51,10 @@ function NewsEntry({ item }: { item: NewsItem }) {
       href={item.url !== '#' ? item.url : undefined}
       target="_blank"
       rel="noopener noreferrer"
-      className="block px-3 py-2 hover:bg-terminal-border transition-colors cursor-pointer group"
+      className="block px-3 py-2 hover:bg-[#111] transition-colors cursor-pointer group"
     >
       <div className="flex items-start justify-between gap-2 mb-1">
-        <p className="text-[11px] text-terminal-text leading-snug group-hover:text-terminal-green transition-colors line-clamp-2">
+        <p className="text-[11px] text-[#c8c8c8] leading-snug group-hover:text-[#00ff41] transition-colors line-clamp-2">
           {item.title}
         </p>
         {item.category && (
@@ -64,10 +64,10 @@ function NewsEntry({ item }: { item: NewsItem }) {
         )}
       </div>
       {item.summary && (
-        <p className="text-[10px] text-terminal-muted line-clamp-1 mb-1">{item.summary}</p>
+        <p className="text-[10px] text-[#555] line-clamp-1 mb-1">{item.summary}</p>
       )}
-      <div className="flex items-center gap-2 text-[9px] text-terminal-muted">
-        <span className="text-terminal-amber">{item.source}</span>
+      <div className="flex items-center gap-2 text-[9px] text-[#555]">
+        <span className="text-[#ffaa00]">{item.source}</span>
         <span>·</span>
         <span>{formatRelativeTime(item.publishedAt)}</span>
       </div>

@@ -7,9 +7,9 @@ import TerminalCard from '@/components/ui/TerminalCard'
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 const SENTIMENT_CONFIG = {
-  bullish: { label: '▲ BYCZY', color: 'text-terminal-green', barColor: 'bg-terminal-green' },
-  bearish: { label: '▼ NIEDŹWIEDZI', color: 'text-terminal-red', barColor: 'bg-terminal-red' },
-  neutral: { label: '◆ NEUTRALNY', color: 'text-terminal-amber', barColor: 'bg-terminal-amber' },
+  bullish: { label: '▲ BYCZY', color: 'text-[#00ff41]', barColor: 'bg-[#00ff41]' },
+  bearish: { label: '▼ NIEDŹWIEDZI', color: 'text-[#ff0040]', barColor: 'bg-[#ff0040]' },
+  neutral: { label: '◆ NEUTRALNY', color: 'text-[#ffaa00]', barColor: 'bg-[#ffaa00]' },
 }
 
 export default function AIMarketSummary() {
@@ -29,18 +29,18 @@ export default function AIMarketSummary() {
       className="h-full"
     >
       {isLoading ? (
-        <div className="p-3 flex items-center gap-2 text-[11px] text-terminal-muted">
-          <span className="blink text-terminal-green">█</span>
+        <div className="p-3 flex items-center gap-2 text-[11px] text-[#555]">
+          <span className="blink text-[#00ff41]">█</span>
           Analizuję rynek...
         </div>
       ) : data ? (
         <div className="flex flex-col gap-0 overflow-auto">
-          <div className="px-3 py-2 border-b border-terminal-border">
+          <div className="px-3 py-2 border-b border-[#1c1c1c]">
             <div className="flex items-center justify-between mb-1.5">
               <span className={clsx('text-sm font-bold', cfg.color)}>{cfg.label}</span>
-              <span className="text-terminal-muted text-[10px]">Indeks sentymentu: {data.sentimentScore}/100</span>
+              <span className="text-[#555] text-[10px]">Indeks sentymentu: {data.sentimentScore}/100</span>
             </div>
-            <div className="h-1.5 bg-terminal-border rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[#111] rounded-full overflow-hidden">
               <div
                 className={clsx('h-full transition-all', cfg.barColor)}
                 style={{ width: `${data.sentimentScore}%` }}
@@ -48,17 +48,17 @@ export default function AIMarketSummary() {
             </div>
           </div>
 
-          <div className="px-3 py-2 border-b border-terminal-border">
-            <p className="text-[11px] text-terminal-text leading-relaxed">{data.summary}</p>
+          <div className="px-3 py-2 border-b border-[#1c1c1c]">
+            <p className="text-[11px] text-[#c8c8c8] leading-relaxed">{data.summary}</p>
           </div>
 
-          <div className="px-3 py-2 border-b border-terminal-border">
-            <div className="text-[10px] text-terminal-amber uppercase tracking-widest mb-1.5">Kluczowe punkty</div>
+          <div className="px-3 py-2 border-b border-[#1c1c1c]">
+            <div className="text-[10px] text-[#ffaa00] uppercase tracking-widest mb-1.5">Kluczowe punkty</div>
             <ul className="flex flex-col gap-1">
               {data.keyPoints.map((point, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-[11px]">
-                  <span className="text-terminal-green shrink-0 mt-0.5">›</span>
-                  <span className="text-terminal-text">{point}</span>
+                  <span className="text-[#00ff41] shrink-0 mt-0.5">›</span>
+                  <span className="text-[#c8c8c8]">{point}</span>
                 </li>
               ))}
             </ul>
@@ -66,7 +66,7 @@ export default function AIMarketSummary() {
 
           {data.sectors && (
             <div className="px-3 py-2">
-              <div className="text-[10px] text-terminal-amber uppercase tracking-widest mb-1.5">Sektory</div>
+              <div className="text-[10px] text-[#ffaa00] uppercase tracking-widest mb-1.5">Sektory</div>
               <div className="flex flex-col gap-1">
                 {data.sectors.map(sector => {
                   // Scale: ±15% performance → ±50% of track (each half = 50%)
@@ -98,7 +98,7 @@ export default function AIMarketSummary() {
           )}
         </div>
       ) : (
-        <div className="p-3 text-terminal-muted text-xs">Nie udało się załadować podsumowania.</div>
+        <div className="p-3 text-[#555] text-xs">Nie udało się załadować podsumowania.</div>
       )}
     </TerminalCard>
   )
