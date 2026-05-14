@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
 import StatusBar from '@/components/ui/StatusBar'
 import Ticker from '@/components/ui/Ticker'
 import FunctionBar from '@/components/ui/FunctionBar'
@@ -20,8 +21,24 @@ const MarketOverview  = dynamic(() => import('@/components/market/MarketOverview
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
 
-const Panel = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div className="overflow-hidden bg-[#080808]">
+const Handle = ({ direction = 'vertical' }: { direction?: 'vertical' | 'horizontal' }) => (
+  <PanelResizeHandle
+    className={
+      direction === 'vertical'
+        ? 'w-px bg-[#111] hover:bg-[#00ff41] transition-colors cursor-col-resize group relative'
+        : 'h-px bg-[#111] hover:bg-[#00ff41] transition-colors cursor-row-resize group relative'
+    }
+  >
+    {/* invisible hit area for easier grabbing */}
+    <div className={direction === 'vertical'
+      ? 'absolute inset-y-0 -inset-x-1'
+      : 'absolute inset-x-0 -inset-y-1'
+    } />
+  </PanelResizeHandle>
+)
+
+const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
+  <div className="overflow-hidden bg-[#080808] h-full">
     <ErrorBoundary label={label}>{children}</ErrorBoundary>
   </div>
 )
@@ -49,53 +66,67 @@ export default function Home() {
         <StatusBar isDemo={isDemo} />
         <Ticker />
 
-        {/* ── Main grid ── */}
-        <div
-          className="overflow-hidden"
-          style={{
-            flex: '1 1 0',
-            display: 'grid',
-            gridTemplateColumns: '210px 1fr 250px',
-            gap: 1,
-            backgroundColor: '#111',
-            minHeight: 0,
-          }}
+        {/* ── Main resizable area ── */}
+        <PanelGroup orientation="horizontal" className="flex-1 min-h-0" id="main-layout">
+          {/* Watchlist */}
+          <Panel defaultSize={14} minSize={8} maxSize={30}>
+            <P label="Watchlista"><Watchlist /></P>
+          </Panel>
+
+          <Handle direction="vertical" />
+
+          {/* Center column */}
+          <Panel defaultSize={68} minSize={40}>
+            <PanelGroup orientation="vertical" id="center-layout">
+              {/* Chart */}
+              <Panel defaultSize={60} minSize={25}>
+                <P label="Wykres"><CandlestickChart /></P>
+              </Panel>
+
+              <Handle direction="horizontal" />
+
+              {/* AI + Market */}
+              <Panel defaultSize={40} minSize={20}>
+                <PanelGroup orientation="horizontal" id="bottom-center-layout">
+                  <Panel defaultSize={50} minSize={25}>
+                    <P label="AI Podsumowanie"><AIMarketSummary /></P>
+                  </Panel>
+                  <Handle direction="vertical" />
+                  <Panel defaultSize={50} minSize={25}>
+                    <P label="Rynek Globalny"><MarketOverview /></P>
+                  </Panel>
+                </PanelGroup>
+              </Panel>
+            </PanelGroup>
+          </Panel>
+
+          <Handle direction="vertical" />
+
+          {/* News */}
+          <Panel defaultSize={18} minSize={10} maxSize={35}>
+            <P label="Wiadomości"><NewsPanel /></P>
+          </Panel>
+        </PanelGroup>
+
+        {/* ── Bottom strip — resizable ── */}
+        <PanelGroup
+          orientation="horizontal"
+          id="bottom-layout"
+          className="shrink-0"
+          style={{ height: 200 }}
         >
-          <Panel label="Watchlista"><Watchlist /></Panel>
-
-          <div
-            className="overflow-hidden"
-            style={{ display: 'grid', gridTemplateRows: '3fr 2fr', gap: 1, backgroundColor: '#111' }}
-          >
-            <Panel label="Wykres"><CandlestickChart /></Panel>
-            <div
-              className="overflow-hidden"
-              style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, backgroundColor: '#111' }}
-            >
-              <Panel label="AI Podsumowanie"><AIMarketSummary /></Panel>
-              <Panel label="Rynek Globalny"><MarketOverview /></Panel>
-            </div>
-          </div>
-
-          <Panel label="Wiadomości"><NewsPanel /></Panel>
-        </div>
-
-        {/* ── Bottom strip ── */}
-        <div
-          className="shrink-0 overflow-hidden"
-          style={{
-            height: 200,
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 260px',
-            gap: 1,
-            backgroundColor: '#111',
-            borderTop: '1px solid #111',
-          }}
-        >
-          <Panel label="Screener"><MarketScreener /></Panel>
-          <Panel label="Kalendarz"><EconomicCalendar /></Panel>
-          <Panel label="Alerty"><PriceAlerts /></Panel>
-        </div>
+          <Panel defaultSize={40} minSize={20}>
+            <P label="Screener"><MarketScreener /></P>
+          </Panel>
+          <Handle direction="vertical" />
+          <Panel defaultSize={35} minSize={20}>
+            <P label="Kalendarz"><EconomicCalendar /></P>
+          </Panel>
+          <Handle direction="vertical" />
+          <Panel defaultSize={25} minSize={15}>
+            <P label="Alerty"><PriceAlerts /></P>
+          </Panel>
+        </PanelGroup>
 
         <NewsTickerBar />
         <FunctionBar onHelpOpen={() => setShowShortcuts(true)} />
