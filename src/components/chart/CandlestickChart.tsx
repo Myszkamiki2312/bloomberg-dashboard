@@ -58,7 +58,7 @@ export default function CandlestickChart() {
           horzLine: { color: '#00ff41', labelBackgroundColor: '#111111' },
         },
         rightPriceScale: { borderColor: '#1c1c1c' },
-        timeScale: { borderColor: '#1c1c1c', timeVisible: true },
+        timeScale: { borderColor: '#1c1c1c', timeVisible: false },
         width: chartRef.current.clientWidth,
         height: chartRef.current.clientHeight || 300,
       })
