@@ -52,8 +52,15 @@ const Handle = ({ direction = 'vertical' }: { direction?: 'vertical' | 'horizont
   )
 }
 
+const PANEL_IDS: Record<string, string> = {
+  'Watchlista': 'p-watchlista', 'Wykres': 'p-wykres',
+  'Wiadomości': 'p-wiadomosci', 'Screener': 'p-screener',
+  'Alerty': 'p-alerty', 'Kalendarz': 'p-kalendarz',
+  'AI Podsumowanie': 'p-ai', 'Rynek Globalny': 'p-rynek',
+}
+
 const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div id={`panel-${label}`} className="overflow-hidden bg-[#080808] h-full">
+  <div id={PANEL_IDS[label] ?? `p-${label}`} className="overflow-hidden bg-[#080808] h-full">
     <ErrorBoundary label={label}>{children}</ErrorBoundary>
   </div>
 )
@@ -63,9 +70,9 @@ export default function Home() {
 
   useEffect(() => {
     const FN_MAP: Record<string, string> = {
-      F1: 'panel-Watchlista', F2: 'panel-Wykres', F3: 'panel-Wiadomości',
-      F4: 'panel-Screener',   F5: 'panel-Alerty', F6: 'panel-Kalendarz',
-      F7: 'panel-AI Podsumowanie', F8: 'panel-Rynek Globalny',
+      F1: 'p-watchlista', F2: 'p-wykres',    F3: 'p-wiadomosci',
+      F4: 'p-screener',   F5: 'p-alerty',    F6: 'p-kalendarz',
+      F7: 'p-ai',         F8: 'p-rynek',
     }
     const handler = (e: KeyboardEvent) => {
       if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {

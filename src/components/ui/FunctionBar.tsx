@@ -7,14 +7,14 @@ interface FnItem {
 }
 
 const FN_KEYS: FnItem[] = [
-  { key: 'F1', label: 'WATCHLISTA',  panelId: 'panel-Watchlista' },
-  { key: 'F2', label: 'WYKRES',      panelId: 'panel-Wykres' },
-  { key: 'F3', label: 'WIADOMOŚCI',  panelId: 'panel-Wiadomości' },
-  { key: 'F4', label: 'SCREENER',    panelId: 'panel-Screener' },
-  { key: 'F5', label: 'ALERTY',      panelId: 'panel-Alerty' },
-  { key: 'F6', label: 'KALEND.',     panelId: 'panel-Kalendarz' },
-  { key: 'F7', label: 'AI',          panelId: 'panel-AI Podsumowanie' },
-  { key: 'F8', label: 'RYNEK',       panelId: 'panel-Rynek Globalny' },
+  { key: 'F1', label: 'WATCHLISTA', panelId: 'p-watchlista' },
+  { key: 'F2', label: 'WYKRES',     panelId: 'p-wykres' },
+  { key: 'F3', label: 'WIADOMOŚCI', panelId: 'p-wiadomosci' },
+  { key: 'F4', label: 'SCREENER',   panelId: 'p-screener' },
+  { key: 'F5', label: 'ALERTY',     panelId: 'p-alerty' },
+  { key: 'F6', label: 'KALEND.',    panelId: 'p-kalendarz' },
+  { key: 'F7', label: 'AI',         panelId: 'p-ai' },
+  { key: 'F8', label: 'RYNEK',      panelId: 'p-rynek' },
 ]
 
 function flashPanel(panelId: string) {
