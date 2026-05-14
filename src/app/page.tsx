@@ -22,14 +22,35 @@ const MarketOverview  = dynamic(() => import('@/components/market/MarketOverview
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
 
-const Handle = ({ direction = 'vertical' }: { direction?: 'vertical' | 'horizontal' }) => (
-  <PanelResizeHandle
-    className={clsx(
-      'relative flex items-center justify-center transition-colors bg-[#111] hover:bg-[#00ff41]',
-      direction === 'vertical' ? 'w-1 cursor-col-resize' : 'h-1 cursor-row-resize'
-    )}
-  />
-)
+const Handle = ({ direction = 'vertical' }: { direction?: 'vertical' | 'horizontal' }) => {
+  const isVert = direction === 'vertical'
+  return (
+    <PanelResizeHandle
+      className={clsx(
+        'group relative flex items-center justify-center transition-colors shrink-0',
+        'bg-[#0d0d0d] hover:bg-[#1a1a1a]',
+        isVert ? 'w-2 cursor-col-resize' : 'h-2 cursor-row-resize'
+      )}
+    >
+      {/* visible grip line */}
+      <div className={clsx(
+        'transition-colors rounded-full',
+        isVert
+          ? 'w-px h-8 group-hover:bg-[#00ff41] bg-[#2a2a2a]'
+          : 'h-px w-8 group-hover:bg-[#00ff41] bg-[#2a2a2a]'
+      )} />
+      {/* dots indicator */}
+      <div className={clsx(
+        'absolute flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity',
+        isVert ? 'flex-col' : 'flex-row'
+      )}>
+        {[0,1,2].map(i => (
+          <div key={i} className="w-0.5 h-0.5 rounded-full bg-[#00ff41]" />
+        ))}
+      </div>
+    </PanelResizeHandle>
+  )
+}
 
 const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
   <div className="overflow-hidden bg-[#080808] h-full">
