@@ -113,23 +113,18 @@ export default function Watchlist() {
                   )}
                 </div>
 
-                {/* Change % */}
-                <div className="text-right flex flex-col items-end">
-                  {p ? (
-                    <>
-                      <span className={clsx('num font-bold', p.changePercent24h >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                        {p.changePercent24h >= 0 ? '+' : ''}{p.changePercent24h.toFixed(2)}%
-                      </span>
-                      <button
-                        onClick={e => { e.stopPropagation(); removeFromWatchlist(entry.symbol) }}
-                        className="text-[8px] text-[#333] opacity-0 group-hover:opacity-100 hover:text-[#ff0040] transition-opacity"
-                      >
-                        ✕
-                      </button>
-                    </>
-                  ) : (
-                    <span className="text-[#333]">—</span>
-                  )}
+                {/* Change % + delete */}
+                <div className="text-right flex flex-col items-end gap-0.5">
+                  <span className={clsx('num font-bold', p && p.changePercent24h >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                    {p ? `${p.changePercent24h >= 0 ? '+' : ''}${p.changePercent24h.toFixed(2)}%` : '—'}
+                  </span>
+                  <button
+                    onClick={e => { e.stopPropagation(); removeFromWatchlist(entry.symbol) }}
+                    title={`Usuń ${entry.symbol}`}
+                    className="text-[10px] text-[#333] hover:text-[#ff0040] transition-colors leading-none px-0.5"
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
               {/* Volume bar */}
