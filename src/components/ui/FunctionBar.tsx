@@ -19,11 +19,18 @@ const FN_KEYS: FnItem[] = [
 
 function flashPanel(panelId: string) {
   const el = document.getElementById(panelId)
-  if (!el) return
-  el.classList.remove('panel-fn-flash')
-  void el.offsetWidth // force reflow to restart animation
-  el.classList.add('panel-fn-flash')
-  setTimeout(() => el.classList.remove('panel-fn-flash'), 800)
+  if (!el) {
+    console.warn('[FunctionBar] panel not found:', panelId, '— IDs on page:', Array.from(document.querySelectorAll('[id^="p-"]')).map(e => e.id))
+    return
+  }
+  // Direct style manipulation — no CSS class dependency
+  el.style.outline = '2px solid #00ff41'
+  el.style.outlineOffset = '-2px'
+  el.style.transition = 'outline 0.1s'
+  setTimeout(() => {
+    el.style.outline = '2px solid transparent'
+    setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; el.style.transition = '' }, 400)
+  }, 600)
 }
 
 export default function FunctionBar({ onHelpOpen }: { onHelpOpen?: () => void }) {
