@@ -21,7 +21,7 @@ export default function CandlestickChart() {
   const [days, setDays] = useState(90)
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<IChartApi | null>(null)
-  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
   const pendingData = useRef<OHLCBar[]>([])
 
   const { data = [], isLoading } = useSWR<OHLCBar[]>(
@@ -43,41 +43,54 @@ export default function CandlestickChart() {
       const chart = createChart(chartRef.current, {
         layout: {
           background: { type: ColorType.Solid, color: '#080808' },
-          textColor: '#666666',
+          textColor: '#555',
           fontFamily: 'JetBrains Mono, monospace',
           fontSize: 10,
         },
         grid: {
-          vertLines: { color: '#111111' },
-          horzLines: { color: '#111111' },
+          vertLines: { color: '#0f0f0f' },
+          horzLines: { color: '#0f0f0f' },
         },
         crosshair: {
           mode: CrosshairMode.Normal,
-          vertLine: { color: '#00ff41', labelBackgroundColor: '#111111' },
-          horzLine: { color: '#00ff41', labelBackgroundColor: '#111111' },
+          vertLine: { color: '#00ff41', labelBackgroundColor: '#0a0a0a', width: 1, style: 3 },
+          horzLine: { color: '#00ff41', labelBackgroundColor: '#0a0a0a', width: 1, style: 3 },
         },
-        rightPriceScale: { borderColor: '#1c1c1c' },
-        timeScale: { borderColor: '#1c1c1c', timeVisible: false },
+        rightPriceScale: {
+          borderColor: '#1a1a1a',
+          textColor: '#555',
+        },
+        timeScale: { borderColor: '#1a1a1a', timeVisible: false },
         width: chartRef.current.clientWidth,
         height: chartRef.current.clientHeight || 300,
       })
 
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: '#00ff41',
-        downColor: '#ff0040',
-        borderUpColor: '#00ff41',
-        borderDownColor: '#ff0040',
-        wickUpColor: '#00ff41',
-        wickDownColor: '#ff0040',
+      const overallChange = pendingData.current.length >= 2
+        ? pendingData.current[pendingData.current.length - 1].close - pendingData.current[0].close
+        : 0
+      const isUp = overallChange >= 0
+
+      const areaSeries = chart.addAreaSeries({
+        lineColor: isUp ? '#00ff41' : '#ff0040',
+        lineWidth: 2,
+        topColor: isUp ? 'rgba(0,255,65,0.25)' : 'rgba(255,0,64,0.25)',
+        bottomColor: isUp ? 'rgba(0,255,65,0.01)' : 'rgba(255,0,64,0.01)',
+        priceLineColor: isUp ? '#00ff41' : '#ff0040',
+        priceLineWidth: 1,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 4,
+        crosshairMarkerBorderColor: isUp ? '#00ff41' : '#ff0040',
+        crosshairMarkerBackgroundColor: '#080808',
+        lastValueVisible: true,
       })
 
       chartInstance.current = chart
-      seriesRef.current = candleSeries
+      seriesRef.current = areaSeries
 
       if (pendingData.current.length > 0) {
         const sorted = [...pendingData.current].sort((a, b) => a.time.localeCompare(b.time))
         const deduped = sorted.filter((bar, i, arr) => i === 0 || bar.time !== arr[i - 1].time)
-        candleSeries.setData(deduped)
+        areaSeries.setData(deduped.map(b => ({ time: b.time, value: b.close })))
         chart.timeScale().fitContent()
       }
 
@@ -91,14 +104,10 @@ export default function CandlestickChart() {
         }
       }
 
-      // ResizeObserver detects panel un-minimize AND window resize
       const ro = new ResizeObserver(applySize)
       ro.observe(chartRef.current)
       window.addEventListener('resize', applySize)
-      removeResizeListener = () => {
-        ro.disconnect()
-        window.removeEventListener('resize', applySize)
-      }
+      removeResizeListener = () => { ro.disconnect(); window.removeEventListener('resize', applySize) }
     }
 
     init()
@@ -117,7 +126,17 @@ export default function CandlestickChart() {
     if (!seriesRef.current || !data.length) return
     const sorted = [...data].sort((a, b) => a.time.localeCompare(b.time))
     const deduped = sorted.filter((bar, i, arr) => i === 0 || bar.time !== arr[i - 1].time)
-    seriesRef.current.setData(deduped)
+
+    // Update color based on overall trend
+    const isUp = deduped[deduped.length - 1].close >= deduped[0].close
+    seriesRef.current.applyOptions({
+      lineColor: isUp ? '#00ff41' : '#ff0040',
+      topColor: isUp ? 'rgba(0,255,65,0.25)' : 'rgba(255,0,64,0.25)',
+      bottomColor: isUp ? 'rgba(0,255,65,0.01)' : 'rgba(255,0,64,0.01)',
+      priceLineColor: isUp ? '#00ff41' : '#ff0040',
+    })
+
+    seriesRef.current.setData(deduped.map(b => ({ time: b.time, value: b.close })))
     chartInstance.current?.timeScale().fitContent()
   }, [data])
 
@@ -126,6 +145,7 @@ export default function CandlestickChart() {
   const overallChange = lastBar && firstBar
     ? ((lastBar.close - firstBar.close) / firstBar.close) * 100
     : 0
+  const isUp = overallChange >= 0
 
   return (
     <TerminalCard
@@ -153,14 +173,20 @@ export default function CandlestickChart() {
       }
     >
       {lastBar && (
-        <div className="flex items-center gap-4 px-3 py-1.5 border-b border-[#1c1c1c] text-[11px]">
-          <span className="text-[#ffaa00] font-bold text-base num">{formatPrice(lastBar.close)}</span>
-          <span className={overallChange >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]'}>
-            {formatPercent(overallChange)} ({TIMEFRAMES.find(t => t.days === days)?.label})
+        <div className="flex items-center gap-4 px-3 py-1.5 border-b border-[#111] text-[11px]">
+          <span className={clsx('font-bold text-[15px] num', isUp ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+            {formatPrice(lastBar.close)}
           </span>
-          <span className="text-[#555]">O: {formatPrice(lastBar.open)}</span>
-          <span className="text-[#555]">H: {formatPrice(lastBar.high)}</span>
-          <span className="text-[#555]">L: {formatPrice(lastBar.low)}</span>
+          <span className={clsx('font-bold num', isUp ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+            {isUp ? '▲' : '▼'} {formatPercent(Math.abs(overallChange) / 100).replace('+','').replace('-','')}
+            <span className="text-[#333] font-normal ml-1">
+              {TIMEFRAMES.find(t => t.days === days)?.label}
+            </span>
+          </span>
+          <span className="text-[#333]">│</span>
+          <span className="text-[#444]">O <span className="text-[#666]">{formatPrice(lastBar.open)}</span></span>
+          <span className="text-[#444]">H <span className="text-[#00ff41]">{formatPrice(lastBar.high)}</span></span>
+          <span className="text-[#444]">D <span className="text-[#ff0040]">{formatPrice(lastBar.low)}</span></span>
         </div>
       )}
 

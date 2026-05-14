@@ -71,12 +71,10 @@ export default function TerminalCard({
         </div>
       </div>
 
-      {/* Content — hidden when minimized */}
-      {!minimized && (
-        <div className="flex-1 overflow-auto min-h-0">
-          {children}
-        </div>
-      )}
+      {/* Content — CSS hidden keeps DOM alive (charts/canvas survive minimize) */}
+      <div className={minimized ? 'hidden' : 'flex-1 overflow-auto min-h-0'}>
+        {children}
+      </div>
     </div>
   )
 }
