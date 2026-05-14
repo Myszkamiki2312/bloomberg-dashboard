@@ -125,9 +125,13 @@ export default function CandlestickChart() {
     pendingData.current = data
     if (!seriesRef.current || !data.length) return
     const sorted = [...data].sort((a, b) => a.time.localeCompare(b.time))
-    const deduped = sorted.filter((bar, i, arr) => i === 0 || bar.time !== arr[i - 1].time)
+    // Take LAST bar per date (correct daily close — CoinGecko 1M returns 4h bars)
+    const deduped = sorted
+      .filter((bar, i, arr) => i === arr.length - 1 || bar.time !== arr[i + 1].time)
+      .filter(b => isFinite(b.close) && b.close > 0)
 
-    // Update color based on overall trend
+    if (!deduped.length) return
+
     const isUp = deduped[deduped.length - 1].close >= deduped[0].close
     seriesRef.current.applyOptions({
       lineColor: isUp ? '#00ff41' : '#ff0040',
@@ -140,9 +144,15 @@ export default function CandlestickChart() {
     chartInstance.current?.timeScale().fitContent()
   }, [data])
 
-  const lastBar = data[data.length - 1]
-  const firstBar = data[0]
-  const overallChange = lastBar && firstBar
+  // Use sorted+deduped for header stats too
+  const chartBars = [...data]
+    .sort((a, b) => a.time.localeCompare(b.time))
+    .filter((bar, i, arr) => i === arr.length - 1 || bar.time !== arr[i + 1].time)
+    .filter(b => isFinite(b.close) && b.close > 0)
+
+  const lastBar = chartBars[chartBars.length - 1]
+  const firstBar = chartBars[0]
+  const overallChange = lastBar && firstBar && firstBar.close > 0
     ? ((lastBar.close - firstBar.close) / firstBar.close) * 100
     : 0
   const isUp = overallChange >= 0
