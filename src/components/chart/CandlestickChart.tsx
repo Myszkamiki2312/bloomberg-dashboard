@@ -81,16 +81,24 @@ export default function CandlestickChart() {
         chart.timeScale().fitContent()
       }
 
-      const handleResize = () => {
-        if (chartRef.current && !destroyed) {
-          chart.applyOptions({
-            width: chartRef.current.clientWidth,
-            height: chartRef.current.clientHeight || 300,
-          })
+      const applySize = () => {
+        if (!chartRef.current || destroyed) return
+        const w = chartRef.current.clientWidth
+        const h = chartRef.current.clientHeight
+        if (w > 0 && h > 0) {
+          chart.applyOptions({ width: w, height: h })
+          chart.timeScale().fitContent()
         }
       }
-      window.addEventListener('resize', handleResize)
-      removeResizeListener = () => window.removeEventListener('resize', handleResize)
+
+      // ResizeObserver detects panel un-minimize AND window resize
+      const ro = new ResizeObserver(applySize)
+      ro.observe(chartRef.current)
+      window.addEventListener('resize', applySize)
+      removeResizeListener = () => {
+        ro.disconnect()
+        window.removeEventListener('resize', applySize)
+      }
     }
 
     init()
