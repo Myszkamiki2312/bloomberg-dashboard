@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
+import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels'
+import { clsx } from 'clsx'
 import StatusBar from '@/components/ui/StatusBar'
 import Ticker from '@/components/ui/Ticker'
 import FunctionBar from '@/components/ui/FunctionBar'
@@ -23,18 +24,11 @@ const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
 
 const Handle = ({ direction = 'vertical' }: { direction?: 'vertical' | 'horizontal' }) => (
   <PanelResizeHandle
-    className={
-      direction === 'vertical'
-        ? 'w-px bg-[#111] hover:bg-[#00ff41] transition-colors cursor-col-resize group relative'
-        : 'h-px bg-[#111] hover:bg-[#00ff41] transition-colors cursor-row-resize group relative'
-    }
-  >
-    {/* invisible hit area for easier grabbing */}
-    <div className={direction === 'vertical'
-      ? 'absolute inset-y-0 -inset-x-1'
-      : 'absolute inset-x-0 -inset-y-1'
-    } />
-  </PanelResizeHandle>
+    className={clsx(
+      'relative flex items-center justify-center transition-colors bg-[#111] hover:bg-[#00ff41]',
+      direction === 'vertical' ? 'w-1 cursor-col-resize' : 'h-1 cursor-row-resize'
+    )}
+  />
 )
 
 const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
@@ -67,7 +61,7 @@ export default function Home() {
         <Ticker />
 
         {/* ── Main resizable area ── */}
-        <PanelGroup orientation="horizontal" className="flex-1 min-h-0" id="main-layout">
+        <PanelGroup direction="horizontal" className="flex-1 min-h-0" id="main-layout">
           {/* Watchlist */}
           <Panel defaultSize={14} minSize={8} maxSize={30}>
             <P label="Watchlista"><Watchlist /></P>
@@ -77,7 +71,7 @@ export default function Home() {
 
           {/* Center column */}
           <Panel defaultSize={68} minSize={40}>
-            <PanelGroup orientation="vertical" id="center-layout">
+            <PanelGroup direction="vertical" id="center-layout">
               {/* Chart */}
               <Panel defaultSize={60} minSize={25}>
                 <P label="Wykres"><CandlestickChart /></P>
@@ -87,7 +81,7 @@ export default function Home() {
 
               {/* AI + Market */}
               <Panel defaultSize={40} minSize={20}>
-                <PanelGroup orientation="horizontal" id="bottom-center-layout">
+                <PanelGroup direction="horizontal" id="bottom-center-layout">
                   <Panel defaultSize={50} minSize={25}>
                     <P label="AI Podsumowanie"><AIMarketSummary /></P>
                   </Panel>
@@ -110,7 +104,7 @@ export default function Home() {
 
         {/* ── Bottom strip — resizable ── */}
         <PanelGroup
-          orientation="horizontal"
+          direction="horizontal"
           id="bottom-layout"
           className="shrink-0"
           style={{ height: 200 }}
