@@ -1,0 +1,105 @@
+'use client'
+import useSWR from 'swr'
+import { clsx } from 'clsx'
+import type { MarketSummary } from '@/types'
+import TerminalCard from '@/components/ui/TerminalCard'
+
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+const SENTIMENT_CONFIG = {
+  bullish: { label: '▲ BYCZY', color: 'text-terminal-green', barColor: 'bg-terminal-green' },
+  bearish: { label: '▼ NIEDŹWIEDZI', color: 'text-terminal-red', barColor: 'bg-terminal-red' },
+  neutral: { label: '◆ NEUTRALNY', color: 'text-terminal-amber', barColor: 'bg-terminal-amber' },
+}
+
+export default function AIMarketSummary() {
+  const { data, isLoading } = useSWR<MarketSummary>('/api/ai-summary', fetcher, {
+    refreshInterval: 300000,
+    revalidateOnFocus: false,
+  })
+
+  const sentiment = data?.sentiment ?? 'neutral'
+  const cfg = SENTIMENT_CONFIG[sentiment]
+
+  return (
+    <TerminalCard
+      title="AI — Podsumowanie rynku"
+      badge={data?.isDemo ? 'DEMO' : 'AI'}
+      badgeColor={data?.isDemo ? 'amber' : 'cyan'}
+      className="h-full"
+    >
+      {isLoading ? (
+        <div className="p-3 flex items-center gap-2 text-[11px] text-terminal-muted">
+          <span className="blink text-terminal-green">█</span>
+          Analizuję rynek...
+        </div>
+      ) : data ? (
+        <div className="flex flex-col gap-0 overflow-auto">
+          <div className="px-3 py-2 border-b border-terminal-border">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className={clsx('text-sm font-bold', cfg.color)}>{cfg.label}</span>
+              <span className="text-terminal-muted text-[10px]">Indeks sentymentu: {data.sentimentScore}/100</span>
+            </div>
+            <div className="h-1.5 bg-terminal-border rounded-full overflow-hidden">
+              <div
+                className={clsx('h-full transition-all', cfg.barColor)}
+                style={{ width: `${data.sentimentScore}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="px-3 py-2 border-b border-terminal-border">
+            <p className="text-[11px] text-terminal-text leading-relaxed">{data.summary}</p>
+          </div>
+
+          <div className="px-3 py-2 border-b border-terminal-border">
+            <div className="text-[10px] text-terminal-amber uppercase tracking-widest mb-1.5">Kluczowe punkty</div>
+            <ul className="flex flex-col gap-1">
+              {data.keyPoints.map((point, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-[11px]">
+                  <span className="text-terminal-green shrink-0 mt-0.5">›</span>
+                  <span className="text-terminal-text">{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {data.sectors && (
+            <div className="px-3 py-2">
+              <div className="text-[10px] text-terminal-amber uppercase tracking-widest mb-1.5">Sektory</div>
+              <div className="flex flex-col gap-1">
+                {data.sectors.map(sector => {
+                  // Scale: ±15% performance → ±50% of track (each half = 50%)
+                  const pct = Math.min(Math.abs(sector.performance) * (50 / 15), 50)
+                  const pos = sector.performance >= 0
+                  return (
+                  <div key={sector.name} className="flex items-center gap-2">
+                    <span className="text-[10px] text-[#c8c8c8] w-24 shrink-0 truncate">{sector.name}</span>
+                    <div className="flex-1 h-2 bg-[#111] relative overflow-hidden">
+                      {/* center divider */}
+                      <div className="absolute top-0 bottom-0 w-px bg-[#333]" style={{ left: '50%' }} />
+                      {/* bar — grows from center outward, never overlaps text */}
+                      <div
+                        className={pos ? 'absolute top-0 bottom-0 bg-[#00ff41]' : 'absolute top-0 bottom-0 bg-[#ff0040]'}
+                        style={pos
+                          ? { left: '50%', width: `${pct}%` }
+                          : { right: '50%', width: `${pct}%` }
+                        }
+                      />
+                    </div>
+                    <span className={clsx('text-[10px] font-mono w-12 text-right shrink-0', pos ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {pos ? '+' : ''}{sector.performance.toFixed(1)}%
+                    </span>
+                  </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="p-3 text-terminal-muted text-xs">Nie udało się załadować podsumowania.</div>
+      )}
+    </TerminalCard>
+  )
+}

@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+* { box-sizing: border-box; }
+
+html, body {
+  background-color: #080808;
+  color: #c8c8c8;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  overflow: hidden;
+}
+
+/* CRT scanlines overlay */
+body::before {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.08) 1px,
+    rgba(0, 0, 0, 0.08) 2px
+  );
+  z-index: 9998;
+}
+
+/* Moving scan beam */
+@keyframes scan-beam {
+  0%   { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
+}
+.scanline {
+  pointer-events: none;
+  position: fixed;
+  inset-x: 0;
+  top: 0;
+  height: 80px;
+  background: linear-gradient(transparent, rgba(0,255,65,0.012), transparent);
+  animation: scan-beam 12s linear infinite;
+  z-index: 9999;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* Price flash animations */
+@keyframes flash-up {
+  0%   { background-color: rgba(0, 255, 65, 0.25); }
+  100% { background-color: transparent; }
+}
+@keyframes flash-down {
+  0%   { background-color: rgba(255, 0, 64, 0.25); }
+  100% { background-color: transparent; }
+}
+.flash-up   { animation: flash-up   0.7s ease-out; }
+.flash-down { animation: flash-down 0.7s ease-out; }
+
+/* Ticker scroll */
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-inner {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: ticker-scroll 60s linear infinite;
+}
+.ticker-inner:hover { animation-play-state: paused; }
+
+/* Blink cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.blink { animation: blink 1s step-end infinite; }
+
+/* Glow effects */
+.glow-green  { text-shadow: 0 0 6px rgba(0,255,65,0.5); }
+.glow-red    { text-shadow: 0 0 6px rgba(255,0,64,0.5); }
+.glow-amber  { text-shadow: 0 0 6px rgba(255,170,0,0.4); }
+
+/* Panel label style */
+.panel-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ffaa00;
+}
+
+/* Number display */
+.num { font-variant-numeric: tabular-nums; }
+
+/* Positive / Negative */
+.pos { color: #00ff41; }
+.neg { color: #ff0040; }
+.neu { color: #ffaa00; }
+
+/* Table row hover */
+.tr-hover:hover { background-color: #141414; }
+
+/* Panel border */
+.panel { border: 1px solid #1c1c1c; }
+
+/* Mini bar */
+.bar-track { background: #1a1a1a; height: 2px; }
+.bar-fill-pos { background: #00ff41; height: 2px; }
+.bar-fill-neg { background: #ff0040; height: 2px; }
+
+/* Keyboard shortcut key */
+.kbd {
+  display: inline-block;
+  border: 1px solid #333;
+  background: #141414;
+  color: #999;
+  padding: 0 4px;
+  font-size: 10px;
+  border-radius: 2px;
+  line-height: 16px;
+}
+
+/* Bottom function bar */
+.fn-key {
+  color: #ffaa00;
+  font-size: 10px;
+  font-weight: 700;
+}
+.fn-label {
+  color: #888;
+  font-size: 10px;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; }
