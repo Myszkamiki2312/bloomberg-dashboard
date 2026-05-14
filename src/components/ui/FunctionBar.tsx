@@ -3,18 +3,28 @@
 interface FnItem {
   key: string
   label: string
+  panelId: string
 }
 
 const FN_KEYS: FnItem[] = [
-  { key: 'F1', label: 'WATCHLISTA' },
-  { key: 'F2', label: 'WYKRES' },
-  { key: 'F3', label: 'WIADOMOŚCI' },
-  { key: 'F4', label: 'SCREENER' },
-  { key: 'F5', label: 'ALERTY' },
-  { key: 'F6', label: 'KALEND.' },
-  { key: 'F7', label: 'AI-ANALIZA' },
-  { key: 'F8', label: 'RYNEK' },
+  { key: 'F1', label: 'WATCHLISTA',  panelId: 'panel-Watchlista' },
+  { key: 'F2', label: 'WYKRES',      panelId: 'panel-Wykres' },
+  { key: 'F3', label: 'WIADOMOŚCI',  panelId: 'panel-Wiadomości' },
+  { key: 'F4', label: 'SCREENER',    panelId: 'panel-Screener' },
+  { key: 'F5', label: 'ALERTY',      panelId: 'panel-Alerty' },
+  { key: 'F6', label: 'KALEND.',     panelId: 'panel-Kalendarz' },
+  { key: 'F7', label: 'AI',          panelId: 'panel-AI Podsumowanie' },
+  { key: 'F8', label: 'RYNEK',       panelId: 'panel-Rynek Globalny' },
 ]
+
+function flashPanel(panelId: string) {
+  const el = document.getElementById(panelId)
+  if (!el) return
+  el.classList.remove('panel-fn-flash')
+  void el.offsetWidth // force reflow to restart animation
+  el.classList.add('panel-fn-flash')
+  setTimeout(() => el.classList.remove('panel-fn-flash'), 800)
+}
 
 export default function FunctionBar({ onHelpOpen }: { onHelpOpen?: () => void }) {
   return (
@@ -24,10 +34,15 @@ export default function FunctionBar({ onHelpOpen }: { onHelpOpen?: () => void })
     >
       <div className="flex items-stretch divide-x divide-[#1c1c1c] h-full flex-1">
         {FN_KEYS.map(fn => (
-          <div key={fn.key} className="flex items-center px-2 gap-1.5 hover:bg-[#0f0f0f] cursor-default select-none">
+          <button
+            key={fn.key}
+            onClick={() => flashPanel(fn.panelId)}
+            className="flex items-center px-2 gap-1.5 hover:bg-[#0f0f0f] active:bg-[#1a1a1a] cursor-pointer select-none transition-colors"
+            title={`${fn.key}: przejdź do panelu ${fn.label}`}
+          >
             <span className="fn-key">{fn.key}</span>
             <span className="fn-label">{fn.label}</span>
-          </div>
+          </button>
         ))}
       </div>
       <div className="flex items-center gap-4 px-3 border-l border-[#1c1c1c] text-[10px] text-[#444] shrink-0">

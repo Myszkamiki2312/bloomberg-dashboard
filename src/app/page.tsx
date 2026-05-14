@@ -53,7 +53,7 @@ const Handle = ({ direction = 'vertical' }: { direction?: 'vertical' | 'horizont
 }
 
 const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div className="overflow-hidden bg-[#080808] h-full">
+  <div id={`panel-${label}`} className="overflow-hidden bg-[#080808] h-full">
     <ErrorBoundary label={label}>{children}</ErrorBoundary>
   </div>
 )
@@ -62,11 +62,26 @@ export default function Home() {
   const [showShortcuts, setShowShortcuts] = useState(false)
 
   useEffect(() => {
+    const FN_MAP: Record<string, string> = {
+      F1: 'panel-Watchlista', F2: 'panel-Wykres', F3: 'panel-Wiadomości',
+      F4: 'panel-Screener',   F5: 'panel-Alerty', F6: 'panel-Kalendarz',
+      F7: 'panel-AI Podsumowanie', F8: 'panel-Rynek Globalny',
+    }
     const handler = (e: KeyboardEvent) => {
       if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         setShowShortcuts(s => !s)
       }
       if (e.key === 'Escape') setShowShortcuts(false)
+      if (FN_MAP[e.key]) {
+        e.preventDefault()
+        const el = document.getElementById(FN_MAP[e.key])
+        if (el) {
+          el.classList.remove('panel-fn-flash')
+          void el.offsetWidth
+          el.classList.add('panel-fn-flash')
+          setTimeout(() => el.classList.remove('panel-fn-flash'), 800)
+        }
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
