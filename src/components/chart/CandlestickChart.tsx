@@ -10,6 +10,22 @@ import { clsx } from 'clsx'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
+function cleanBars(data: OHLCBar[]): OHLCBar[] {
+  if (!data.length) return []
+  const sorted = [...data].sort((a, b) => a.time.localeCompare(b.time))
+  // Last bar per date (4h CoinGecko → daily close)
+  const deduped = sorted.filter((bar, i, arr) =>
+    i === arr.length - 1 || bar.time !== arr[i + 1].time
+  ).filter(b => isFinite(b.close) && b.close > 0)
+
+  if (!deduped.length) return []
+
+  // Median-based outlier filter — removes anomalous bars (>80% deviation from median)
+  const closes = [...deduped].map(b => b.close).sort((a, b) => a - b)
+  const median = closes[Math.floor(closes.length / 2)]
+  return deduped.filter(b => b.close >= median * 0.2 && b.close <= median * 5)
+}
+
 const TIMEFRAMES = [
   { label: '1M', days: 30 },
   { label: '3M', days: 90 },
@@ -124,15 +140,10 @@ export default function CandlestickChart() {
   useEffect(() => {
     pendingData.current = data
     if (!seriesRef.current || !data.length) return
-    const sorted = [...data].sort((a, b) => a.time.localeCompare(b.time))
-    // Take LAST bar per date (correct daily close — CoinGecko 1M returns 4h bars)
-    const deduped = sorted
-      .filter((bar, i, arr) => i === arr.length - 1 || bar.time !== arr[i + 1].time)
-      .filter(b => isFinite(b.close) && b.close > 0)
+    const clean = cleanBars(data)
+    if (!clean.length) return
 
-    if (!deduped.length) return
-
-    const isUp = deduped[deduped.length - 1].close >= deduped[0].close
+    const isUp = clean[clean.length - 1].close >= clean[0].close
     seriesRef.current.applyOptions({
       lineColor: isUp ? '#00ff41' : '#ff0040',
       topColor: isUp ? 'rgba(0,255,65,0.25)' : 'rgba(255,0,64,0.25)',
@@ -140,15 +151,12 @@ export default function CandlestickChart() {
       priceLineColor: isUp ? '#00ff41' : '#ff0040',
     })
 
-    seriesRef.current.setData(deduped.map(b => ({ time: b.time, value: b.close })))
+    seriesRef.current.setData(clean.map(b => ({ time: b.time, value: b.close })))
     chartInstance.current?.timeScale().fitContent()
   }, [data])
 
-  // Use sorted+deduped for header stats too
-  const chartBars = [...data]
-    .sort((a, b) => a.time.localeCompare(b.time))
-    .filter((bar, i, arr) => i === arr.length - 1 || bar.time !== arr[i + 1].time)
-    .filter(b => isFinite(b.close) && b.close > 0)
+  // Use cleaned bars for header stats
+  const chartBars = cleanBars(data)
 
   const lastBar = chartBars[chartBars.length - 1]
   const firstBar = chartBars[0]
