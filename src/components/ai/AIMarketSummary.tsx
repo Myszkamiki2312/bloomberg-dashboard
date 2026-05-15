@@ -18,8 +18,8 @@ export default function AIMarketSummary() {
     revalidateOnFocus: false,
   })
 
-  const sentiment = data?.sentiment ?? 'neutral'
-  const cfg = SENTIMENT_CONFIG[sentiment]
+  const sentiment = (data?.sentiment ?? 'neutral') as keyof typeof SENTIMENT_CONFIG
+  const cfg = SENTIMENT_CONFIG[sentiment] ?? SENTIMENT_CONFIG.neutral
 
   return (
     <TerminalCard
@@ -55,7 +55,7 @@ export default function AIMarketSummary() {
           <div className="px-3 py-2 border-b border-[#1c1c1c]">
             <div className="text-[10px] text-[#ffaa00] uppercase tracking-widest mb-1.5">Kluczowe punkty</div>
             <ul className="flex flex-col gap-1">
-              {data.keyPoints.map((point, i) => (
+              {(data.keyPoints ?? []).map((point, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-[11px]">
                   <span className="text-[#00ff41] shrink-0 mt-0.5">›</span>
                   <span className="text-[#c8c8c8]">{point}</span>

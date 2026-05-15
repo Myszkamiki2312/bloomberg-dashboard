@@ -63,11 +63,12 @@ export default function EconomicCalendar() {
                             Actual:{' '}
                             <span className={clsx(
                               'font-bold',
-                              event.actual && event.forecast
-                                ? parseFloat(event.actual) > parseFloat(event.forecast)
-                                  ? 'text-[#00ff41]'
-                                  : 'text-[#ff0040]'
-                                : 'text-[#c8c8c8]'
+                              (() => {
+                                const a = parseFloat(event.actual ?? '')
+                                const f = parseFloat(event.forecast ?? '')
+                                if (!isNaN(a) && !isNaN(f)) return a > f ? 'text-[#00ff41]' : 'text-[#ff0040]'
+                                return 'text-[#c8c8c8]'
+                              })()
                             )}>
                               {event.actual}
                             </span>

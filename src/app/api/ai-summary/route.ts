@@ -47,6 +47,17 @@ export async function GET() {
   })
 }
 
+function extractJSON(text: string): unknown | null {
+  try { return JSON.parse(text) } catch {}
+  const start = text.indexOf('{')
+  if (start === -1) return null
+  for (let end = text.length - 1; end > start; end--) {
+    if (text[end] !== '}') continue
+    try { return JSON.parse(text.slice(start, end + 1)) } catch {}
+  }
+  return null
+}
+
 async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -92,10 +103,9 @@ async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
   const data = await res.json()
   const text = data.content?.[0]?.text
   if (!text) throw new Error('Anthropic: empty content')
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Anthropic: no JSON in response')
-  const parsed = JSON.parse(jsonMatch[0])
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
+  const parsed = extractJSON(text) as Record<string, unknown>
+  if (!parsed) throw new Error('Anthropic: no valid JSON in response')
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false } as MarketSummary
 }
 
 async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
