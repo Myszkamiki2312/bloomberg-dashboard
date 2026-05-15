@@ -94,7 +94,9 @@ export async function GET() {
   const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
 
   if (demoMode) {
-    return NextResponse.json(getMockNews())
+    return NextResponse.json(getMockNews(), {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+    })
   }
 
   const results = await Promise.allSettled(RSS_FEEDS.map(parseRSSFeed))
