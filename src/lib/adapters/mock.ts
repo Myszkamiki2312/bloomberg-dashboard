@@ -42,10 +42,10 @@ const MOCK_PRICES_BASE = [
   { symbol: 'BTC',  name: 'Bitcoin',        price: 103200,  change24h: -1850,   changePercent24h: -1.76, volume24h: 35_000_000_000, marketCap: 2_045_000_000_000, type: 'crypto' as const },
   { symbol: 'ETH',  name: 'Ethereum',       price: 2420,    change24h: -68,     changePercent24h: -2.73, volume24h: 18_500_000_000, marketCap: 292_000_000_000,   type: 'crypto' as const },
   { symbol: 'SOL',  name: 'Solana',         price: 166,     change24h: -4.2,    changePercent24h: -2.47, volume24h: 4_200_000_000,  marketCap: 81_000_000_000,    type: 'crypto' as const },
-  { symbol: 'AAPL', name: 'Apple Inc.',     price: 211.5,   change24h: 1.8,     changePercent24h: 0.86,  volume24h: 48_000_000,     marketCap: 3_180_000_000_000, type: 'stock'  as const },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.',   price: 135.4,   change24h: 2.1,     changePercent24h: 1.58,  volume24h: 280_000_000,    marketCap: 3_300_000_000_000, type: 'stock'  as const },
-  { symbol: 'TSLA', name: 'Tesla Inc.',     price: 338.7,   change24h: -8.9,    changePercent24h: -2.56, volume24h: 110_000_000,    marketCap: 1_086_000_000_000, type: 'stock'  as const },
-  { symbol: 'MSFT', name: 'Microsoft Corp.',price: 449.8,   change24h: 3.2,     changePercent24h: 0.72,  volume24h: 22_000_000,     marketCap: 3_350_000_000_000, type: 'stock'  as const },
+  { symbol: 'AAPL', name: 'Apple Inc.',     price: 298.2,   change24h: 2.6,     changePercent24h: 0.88,  volume24h: 48_000_000,     marketCap: 4_500_000_000_000, type: 'stock'  as const },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.',   price: 235.7,   change24h: 3.4,     changePercent24h: 1.46,  volume24h: 280_000_000,    marketCap: 5_740_000_000_000, type: 'stock'  as const },
+  { symbol: 'TSLA', name: 'Tesla Inc.',     price: 443.3,   change24h: -11.2,   changePercent24h: -2.46, volume24h: 110_000_000,    marketCap: 1_424_000_000_000, type: 'stock'  as const },
+  { symbol: 'MSFT', name: 'Microsoft Corp.',price: 409.4,   change24h: 2.9,     changePercent24h: 0.71,  volume24h: 22_000_000,     marketCap: 3_050_000_000_000, type: 'stock'  as const },
   { symbol: 'XRP',  name: 'XRP',            price: 2.38,    change24h: -0.07,   changePercent24h: -2.86, volume24h: 5_200_000_000,  marketCap: 137_000_000_000,   type: 'crypto' as const },
 ]
 
@@ -58,10 +58,10 @@ const BASE_PRICES: Record<string, number> = {
   BTC: 103200,
   ETH: 2420,
   SOL: 166,
-  AAPL: 211,
-  NVDA: 135,
-  TSLA: 339,
-  MSFT: 450,
+  AAPL: 298,
+  NVDA: 236,
+  TSLA: 443,
+  MSFT: 409,
   XRP: 2.38,
 }
 
