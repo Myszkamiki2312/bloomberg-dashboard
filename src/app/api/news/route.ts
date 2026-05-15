@@ -56,20 +56,22 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
 
     if (!title.trim()) continue
 
-    // Decode HTML entities in title
-    const cleanTitle = title.trim()
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#039;/g, "'")
-      .replace(/&nbsp;/g, ' ')
+    // Decode HTML entities in title — covers named, decimal, and hex numeric references
+    const decodeEntities = (s: string) =>
+      s.replace(/&amp;/g, '&')
+       .replace(/&lt;/g, '<')
+       .replace(/&gt;/g, '>')
+       .replace(/&quot;/g, '"')
+       .replace(/&apos;/g, "'")
+       .replace(/&#039;/g, "'")
+       .replace(/&nbsp;/g, ' ')
+       .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+       .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+
+    const cleanTitle = decodeEntities(title.trim())
 
     const rawSummary = description.replace(/<[^>]*>/g, '').trim()
-    const cleanSummary = rawSummary
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&nbsp;/g, ' ')
-      .slice(0, 200)
+    const cleanSummary = decodeEntities(rawSummary).slice(0, 200)
 
     // Use URL as ID when valid (unique per article); fall back to title slice
     const itemId = link !== '#'
