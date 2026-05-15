@@ -39,14 +39,14 @@ function generateOHLC(basePrice: number, days: number, seed = 42): OHLCBar[] {
 }
 
 const MOCK_PRICES_BASE = [
-  { symbol: 'BTC',  name: 'Bitcoin',        price: 103200,  change24h: -1850,   changePercent24h: -1.76, volume24h: 35_000_000_000, marketCap: 2_045_000_000_000, type: 'crypto' as const },
-  { symbol: 'ETH',  name: 'Ethereum',       price: 2420,    change24h: -68,     changePercent24h: -2.73, volume24h: 18_500_000_000, marketCap: 292_000_000_000,   type: 'crypto' as const },
-  { symbol: 'SOL',  name: 'Solana',         price: 166,     change24h: -4.2,    changePercent24h: -2.47, volume24h: 4_200_000_000,  marketCap: 81_000_000_000,    type: 'crypto' as const },
+  { symbol: 'BTC',  name: 'Bitcoin',        price: 79300,   change24h: -1420,   changePercent24h: -1.76, volume24h: 32_000_000_000, marketCap: 1_572_000_000_000, type: 'crypto' as const },
+  { symbol: 'ETH',  name: 'Ethereum',       price: 2229,    change24h: -61,     changePercent24h: -2.66, volume24h: 14_000_000_000, marketCap: 269_000_000_000,   type: 'crypto' as const },
+  { symbol: 'SOL',  name: 'Solana',         price: 89.5,    change24h: -2.6,    changePercent24h: -2.82, volume24h: 3_600_000_000,  marketCap: 46_000_000_000,    type: 'crypto' as const },
   { symbol: 'AAPL', name: 'Apple Inc.',     price: 298.2,   change24h: 2.6,     changePercent24h: 0.88,  volume24h: 48_000_000,     marketCap: 4_500_000_000_000, type: 'stock'  as const },
   { symbol: 'NVDA', name: 'NVIDIA Corp.',   price: 235.7,   change24h: 3.4,     changePercent24h: 1.46,  volume24h: 280_000_000,    marketCap: 5_740_000_000_000, type: 'stock'  as const },
   { symbol: 'TSLA', name: 'Tesla Inc.',     price: 443.3,   change24h: -11.2,   changePercent24h: -2.46, volume24h: 110_000_000,    marketCap: 1_424_000_000_000, type: 'stock'  as const },
   { symbol: 'MSFT', name: 'Microsoft Corp.',price: 409.4,   change24h: 2.9,     changePercent24h: 0.71,  volume24h: 22_000_000,     marketCap: 3_050_000_000_000, type: 'stock'  as const },
-  { symbol: 'XRP',  name: 'XRP',            price: 2.38,    change24h: -0.07,   changePercent24h: -2.86, volume24h: 5_200_000_000,  marketCap: 137_000_000_000,   type: 'crypto' as const },
+  { symbol: 'XRP',  name: 'XRP',            price: 1.446,   change24h: -0.041,  changePercent24h: -2.76, volume24h: 3_800_000_000,  marketCap: 83_000_000_000,    type: 'crypto' as const },
 ]
 
 export function getMockPrices(): AssetPrice[] {
@@ -55,14 +55,14 @@ export function getMockPrices(): AssetPrice[] {
 }
 
 const BASE_PRICES: Record<string, number> = {
-  BTC: 103200,
-  ETH: 2420,
-  SOL: 166,
+  BTC: 79300,
+  ETH: 2229,
+  SOL: 89.5,
   AAPL: 298,
   NVDA: 236,
   TSLA: 443,
   MSFT: 409,
-  XRP: 2.38,
+  XRP: 1.446,
 }
 
 export function getMockOHLC(symbol: string, days = 90): OHLCBar[] {
@@ -73,7 +73,7 @@ export function getMockOHLC(symbol: string, days = 90): OHLCBar[] {
 const NEWS_OFFSETS_MS = [15 * 60000, 45 * 60000, 2 * 3600000, 3 * 3600000, 5 * 3600000, 7 * 3600000]
 const NEWS_BASE: Omit<NewsItem, 'publishedAt'>[] = [
   { id: '1', title: 'Fed utrzymuje stopy — Powell sygnalizuje ostrożność wobec inflacji usługowej', summary: 'Rezerwa Federalna pozostawiła stopy bez zmian. Powell podkreślił, że inflacja usługowa pozostaje powyżej celu i bank centralny nie spieszy się z obniżkami.', url: '#', source: 'Bloomberg (DEMO)', category: 'makro' },
-  { id: '2', title: 'Bitcoin powyżej 103 000 USD — instytucje akumulują po korekcji', summary: 'Spot Bitcoin ETF zarejestrowały napływ ponad 800 mln USD. Analitycy wskazują na silne wsparcie przy 100 000 USD jako kluczowy poziom techniczny.', url: '#', source: 'CoinDesk (DEMO)', category: 'krypto' },
+  { id: '2', title: 'Bitcoin testuje 79 000 USD — kluczowe wsparcie utrzymane mimo korekty', summary: 'Spot Bitcoin ETF odnotowały umiarkowane odpływy. Analitycy wskazują na wsparcie w okolicy 78 000–80 000 USD jako kluczową strefę.', url: '#', source: 'CoinDesk (DEMO)', category: 'krypto' },
   { id: '3', title: 'NVIDIA kapitalizacja 5,7 bln USD — wyprzedziła Apple i Microsoft', summary: 'Producent chipów AI stał się najwyżej wycenianą spółką na świecie. Popyt na układy H100/H200 wciąż przewyższa podaż.', url: '#', source: 'Reuters (DEMO)', category: 'wyniki' },
   { id: '4', title: 'Złoto rekordowe na 3 238 USD — banki centralne kupują historycznie', summary: 'Popyt banków centralnych na złoto osiągnął najwyższy poziom od dekad. Słabszy dolar i napięcia geopolityczne napędzają wzrosty.', url: '#', source: 'FT (DEMO)', category: 'makro' },
   { id: '5', title: 'Apple Intelligence przyspiesza — sprzedaż iPhone w Chinach rośnie', summary: 'Nowe funkcje AI w iOS zwiększyły sprzedaż w Azji. Akcja Apple wzrosła 18% od początku roku, kapitalizacja przekroczyła 4,5 bln USD.', url: '#', source: 'The Verge (DEMO)', category: 'tech' },
@@ -112,13 +112,13 @@ export function getMockAISummary(): MarketSummary {
     sentiment: 'neutral',
     sentimentScore: 48,
     summary:
-      'Rynki w trybie wyczekiwania przed kluczowymi danymi makro. Bitcoin konsoliduje się powyżej 100 000 USD — kluczowe wsparcie utrzymane. NVIDIA napędza wzrosty w sektorze AI, S&P 500 blisko historycznych maksimów. Fed utrzymuje ostrożną postawę wobec trwałej inflacji usługowej.',
+      'Korekta na rynkach krypto — Bitcoin cofa się do okolic 79 000 USD po wcześniejszych wzrostach. Akcje US stabilne dzięki silnym wynikom sektora technologicznego. Złoto rekordowe powyżej 3 200 USD, odzwierciedlając obawy o inflację i napięcia geopolityczne.',
     keyPoints: [
-      'Bitcoin > 100 000 USD — historyczny poziom wsparcia utrzymany',
-      'NVIDIA kapitalizacja przekroczyła 5,7 bln USD — lider AI',
-      'Złoto rekordowe — powyżej 3 200 USD/oz, popyt banków centralnych',
-      'DXY poniżej 101 — słabszy dolar korzystny dla rynków wschodzących',
-      'Fed: brak zmian stóp, rynek wycenia 1-2 obniżki do końca 2025',
+      'Bitcoin testuje wsparcie w okolicy 79 000 USD po korekcie',
+      'NVIDIA napędza wzrosty AI — kapitalizacja powyżej 5,7 bln USD',
+      'Złoto > 3 200 USD/oz — historyczny szczyt, popyt banków centralnych silny',
+      'S&P 500 blisko historycznych maksimów mimo zmienności',
+      'Fed: ostrożność wobec inflacji, rynek wycenia 1 obniżkę w 2025',
     ],
     sectors: [
       { name: 'Technologia', performance: 1.2 },

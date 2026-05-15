@@ -18,7 +18,7 @@ function buildPrompt(): string {
     '{"name":"Zdrowie","performance":-0.2},{"name":"Przemysł","performance":0.4}]}. ' +
     'sentiment: bullish/bearish/neutral. sentimentScore: liczba 0-100. ' +
     'performance: liczba dziesiętna (procent, np. 1.5 lub -0.8). ' +
-    'Uwzględnij: krypto (BTC>100k), akcje US (S&P500 blisko ATH), Europa, surowce (złoto rekordowe).'
+    'Uwzględnij: krypto (BTC ok. 79k USD po korekcie), akcje US (S&P500 blisko ATH), Europa, surowce (złoto > 3200 USD).'
   )
 }
 
