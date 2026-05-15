@@ -14,7 +14,7 @@ export default function Ticker() {
   const { data: prices = [] } = useSWR<AssetPrice[]>(
     watchlist.length ? `/api/prices?symbols=${symbolsParam}` : null,
     fetcher,
-    { refreshInterval: 30000 }
+    { refreshInterval: 30000, revalidateOnFocus: false }
   )
 
   if (!prices.length) return (

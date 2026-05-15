@@ -91,8 +91,9 @@ async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
   const data = await res.json()
   const content = data.choices?.[0]?.message?.content
   if (!content) throw new Error('Groq: empty response')
-  const parsed = JSON.parse(content)
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
+  const parsed = extractJSON(content) as Record<string, unknown>
+  if (!parsed) throw new Error('Groq: no valid JSON in response')
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false } as MarketSummary
 }
 
 async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
@@ -140,6 +141,7 @@ async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
   const data = await res.json()
   const content = data.choices?.[0]?.message?.content
   if (!content) throw new Error('OpenAI: empty choices')
-  const parsed = JSON.parse(content)
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
+  const parsed = extractJSON(content) as Record<string, unknown>
+  if (!parsed) throw new Error('OpenAI: no valid JSON in response')
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false } as MarketSummary
 }
