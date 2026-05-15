@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import type { EconomicEvent } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { formatDate } from '@/lib/utils/formatters'
+import { SkeletonBlock } from '@/components/ui/Skeleton'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -14,7 +15,7 @@ const IMPORTANCE_CONFIG = {
 }
 
 export default function EconomicCalendar() {
-  const { data: events = [] } = useSWR<EconomicEvent[]>('/api/calendar', fetcher, {
+  const { data: events = [], isLoading, error } = useSWR<EconomicEvent[]>('/api/calendar', fetcher, {
     refreshInterval: 3600000,
     revalidateOnFocus: false,
   })
@@ -28,6 +29,15 @@ export default function EconomicCalendar() {
 
   return (
     <TerminalCard title="Kalendarz ekonomiczny" badge="DEMO" badgeColor="muted" className="h-full">
+      {isLoading && events.length === 0 ? (
+        <SkeletonBlock rows={6} cols={3} />
+      ) : error ? (
+        <div className="flex items-center justify-center p-4 text-[10px] text-[#ff0040]">
+          ⚠ Błąd ładowania kalendarza
+        </div>
+      ) : events.length === 0 ? (
+        <div className="p-3 text-[#555] text-[11px]">Brak wydarzeń ekonomicznych.</div>
+      ) : null}
       <div className="flex flex-col divide-y divide-[#1c1c1c]">
         {Object.entries(grouped).map(([date, dayEvents]) => (
           <div key={date}>
