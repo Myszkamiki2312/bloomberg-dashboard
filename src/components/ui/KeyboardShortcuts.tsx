@@ -14,7 +14,7 @@ const SHORTCUTS: Shortcut[] = [
   { category: 'Watchlista', key: 'Klik wiersza', desc: 'Załaduj symbol na wykres' },
   { category: 'Watchlista', key: '+ Dodaj', desc: 'Dodaj nowy symbol' },
   { category: 'Watchlista', key: 'Hover → ✕', desc: 'Usuń symbol' },
-  { category: 'Wykres', key: '1M / 3M / 6M', desc: 'Zmień timeframe' },
+  { category: 'Wykres', key: '1M / 3M / 6M / 1Y', desc: 'Zmień timeframe' },
   { category: 'Wykres', key: 'Scroll', desc: 'Zoom wykresu' },
   { category: 'Wykres', key: 'Drag', desc: 'Przesuń oś czasu' },
   { category: 'Screener', key: 'Klik nagłówka', desc: 'Sortuj kolumnę (▲/▼)' },
