@@ -22,6 +22,7 @@ export async function GET() {
     if (!entry) throw new Error('no data')
 
     const value = parseInt(entry.value, 10)
+    if (isNaN(value)) throw new Error('invalid FNG value')
     const label = LABELS_PL[entry.value_classification] ?? entry.value_classification
 
     return NextResponse.json({ value, label }, {

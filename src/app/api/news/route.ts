@@ -62,10 +62,16 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
       .replace(/&#039;/g, "'")
       .replace(/&nbsp;/g, ' ')
 
+    const rawSummary = description.replace(/<[^>]*>/g, '').trim()
+    const cleanSummary = rawSummary
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&nbsp;/g, ' ')
+      .slice(0, 200)
+
     items.push({
       id: (link + pubDate).slice(0, 120),
       title: cleanTitle,
-      summary: description.replace(/<[^>]*>/g, '').trim().slice(0, 200),
+      summary: cleanSummary,
       url: link.trim(),
       source: feed.source,
       publishedAt: (() => { try { return pubDate ? new Date(pubDate).toISOString() : new Date().toISOString() } catch { return new Date().toISOString() } })(),
