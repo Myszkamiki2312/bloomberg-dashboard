@@ -58,13 +58,17 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<AssetPrice[]
   })
 
   if (!res.ok) throw new Error(`CoinGecko ${res.status}`)
-  const data = await res.json()
+  const data: unknown = await res.json()
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new Error('CoinGecko prices: unexpected response format')
+  }
+  const priceData = data as Record<string, Record<string, number>>
 
   return symbols
     .filter(s => getCoinId(s))
     .map(symbol => {
       const id = getCoinId(symbol)!
-      const d = data[id]
+      const d = priceData[id]
       if (!d) return null
 
       const currentPrice = d.usd ?? 0
