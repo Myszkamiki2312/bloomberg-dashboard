@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const symbol = (searchParams.get('symbol') ?? 'BTC').replace(/[^A-Z0-9.\-]/gi, '').toUpperCase().slice(0, 12) || 'BTC'
   const type = (searchParams.get('type') === 'stock' ? 'stock' : 'crypto') as 'stock' | 'crypto'
-  const days = parseInt(searchParams.get('days') ?? '90', 10)
+  const daysRaw = parseInt(searchParams.get('days') ?? '90', 10)
+  const days = isNaN(daysRaw) ? 90 : Math.max(7, Math.min(365, daysRaw))
 
   try {
     const data = await getOHLC(symbol, type, days)
