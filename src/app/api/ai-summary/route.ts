@@ -70,6 +70,19 @@ function extractJSON(text: string): unknown | null {
   return null
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function validateSummary(obj: any): obj is MarketSummary {
+  const validSentiments = ['bullish', 'bearish', 'neutral']
+  return (
+    obj != null &&
+    typeof obj.summary === 'string' && obj.summary.length > 0 &&
+    validSentiments.includes(obj.sentiment as string) &&
+    typeof obj.sentimentScore === 'number' &&
+    Array.isArray(obj.keyPoints) &&
+    Array.isArray(obj.sectors)
+  )
+}
+
 async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -93,7 +106,8 @@ async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
   if (!content) throw new Error('Groq: empty response')
   const parsed = extractJSON(content) as Record<string, unknown>
   if (!parsed) throw new Error('Groq: no valid JSON in response')
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false } as MarketSummary
+  if (!validateSummary(parsed)) throw new Error('Groq: response missing required fields')
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
 }
 
 async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
@@ -118,7 +132,8 @@ async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
   if (!text) throw new Error('Anthropic: empty content')
   const parsed = extractJSON(text) as Record<string, unknown>
   if (!parsed) throw new Error('Anthropic: no valid JSON in response')
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false } as MarketSummary
+  if (!validateSummary(parsed)) throw new Error('Anthropic: response missing required fields')
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
 }
 
 async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
@@ -143,5 +158,6 @@ async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
   if (!content) throw new Error('OpenAI: empty choices')
   const parsed = extractJSON(content) as Record<string, unknown>
   if (!parsed) throw new Error('OpenAI: no valid JSON in response')
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false } as MarketSummary
+  if (!validateSummary(parsed)) throw new Error('OpenAI: response missing required fields')
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
 }

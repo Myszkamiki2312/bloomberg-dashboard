@@ -121,9 +121,9 @@ export async function GET() {
 
   const seen = new Set<string>()
   const unique = combined.filter(item => {
-    const key = item.title.slice(0, 60)
-    if (seen.has(key)) return false
-    seen.add(key)
+    // Use id (URL-based) as dedup key — title.slice would falsely deduplicate similar headlines
+    if (seen.has(item.id)) return false
+    seen.add(item.id)
     return true
   })
 
