@@ -31,6 +31,7 @@ export default function MarketScreener() {
 
   const { data = [], isLoading, error } = useSWR<ScreenerItem[]>('/api/screener', fetcher, {
     refreshInterval: 60000,
+    revalidateOnFocus: false,
   })
 
   const handleSort = (key: SortKey) => {

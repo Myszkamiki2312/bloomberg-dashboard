@@ -16,6 +16,7 @@ const IMPORTANCE_CONFIG = {
 export default function EconomicCalendar() {
   const { data: events = [] } = useSWR<EconomicEvent[]>('/api/calendar', fetcher, {
     refreshInterval: 3600000,
+    revalidateOnFocus: false,
   })
 
   const grouped = events.reduce<Record<string, EconomicEvent[]>>((acc, ev) => {
