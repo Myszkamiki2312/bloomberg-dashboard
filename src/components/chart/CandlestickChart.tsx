@@ -42,7 +42,7 @@ export default function CandlestickChart() {
   const pendingData = useRef<OHLCBar[]>([])
 
   const swrKey = `/api/chart?symbol=${selectedSymbol}&type=${selectedType}&days=${days}`
-  const { data, isLoading } = useSWR<OHLCBar[]>(swrKey, fetcher, { revalidateOnFocus: false })
+  const { data, isLoading, error } = useSWR<OHLCBar[]>(swrKey, fetcher, { revalidateOnFocus: false })
 
   // Clear chart when symbol/days change so stale data from prev symbol isn't shown
   const prevKey = useRef(swrKey)
@@ -230,9 +230,9 @@ export default function CandlestickChart() {
             <span className="blink text-[#00ff41] mr-2">█</span> Ładowanie wykresu...
           </div>
         )}
-        {!isLoading && !clearing && data !== undefined && chartBars.length === 0 && (
+        {!isLoading && !clearing && (data !== undefined || error) && chartBars.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-[#444] text-xs z-10">
-            Brak danych dla {selectedSymbol}
+            {error ? '⚠ Błąd pobierania wykresu' : `Brak danych dla ${selectedSymbol}`}
           </div>
         )}
         <div ref={chartRef} className="w-full h-full" />
