@@ -97,7 +97,8 @@ export default function Watchlist() {
           const volPct = p ? (p.volume24h / maxVol) * 100 : 0
           const hasPos = !!(entry.quantity && entry.quantity > 0 && entry.avgPrice && entry.avgPrice > 0)
           const pnl    = hasPos && p ? (p.price - entry.avgPrice!) * entry.quantity! : null
-          const pnlPct = hasPos && entry.avgPrice! > 0 ? ((p?.price ?? 0) - entry.avgPrice!) / entry.avgPrice! * 100 : null
+          // Only compute pnlPct when price is loaded — p?.price ?? 0 would show -100% while loading
+          const pnlPct = hasPos && p && entry.avgPrice! > 0 ? (p.price - entry.avgPrice!) / entry.avgPrice! * 100 : null
 
           return (
             <div key={entry.symbol}>
