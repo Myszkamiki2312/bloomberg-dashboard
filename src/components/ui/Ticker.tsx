@@ -25,6 +25,8 @@ export default function Ticker() {
 
   // Duplicate for seamless loop
   const items = [...prices, ...prices]
+  // Scale animation speed: ~4s per item so each symbol stays visible long enough
+  const animDuration = `${Math.max(prices.length * 4, 20)}s`
 
   return (
     <div
@@ -37,7 +39,7 @@ export default function Ticker() {
       <div className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
            style={{ background: 'linear-gradient(to left, #080808, transparent)' }} />
 
-      <div className="ticker-inner h-full items-center gap-0 text-[10px]" style={{ animationDuration: '30s' }}>
+      <div className="ticker-inner h-full items-center gap-0 text-[10px]" style={{ animationDuration: animDuration }}>
         {items.map((p, i) => (
           <span key={`${p.symbol}-${i}`} className="flex items-center shrink-0">
             <span className="px-3 border-r border-[#1c1c1c] flex items-center gap-2">
