@@ -36,7 +36,9 @@ export function formatMarketCap(value: number): string {
 }
 
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('pl-PL', {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('pl-PL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -44,7 +46,9 @@ export function formatDate(dateStr: string): string {
 }
 
 export function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString('pl-PL', {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleTimeString('pl-PL', {
     hour: '2-digit',
     minute: '2-digit',
   })
