@@ -72,12 +72,12 @@ export function getMockOHLC(symbol: string, days = 90): OHLCBar[] {
 
 const NEWS_OFFSETS_MS = [15 * 60000, 45 * 60000, 2 * 3600000, 3 * 3600000, 5 * 3600000, 7 * 3600000]
 const NEWS_BASE: Omit<NewsItem, 'publishedAt'>[] = [
-  { id: '1', title: 'Fed utrzymuje stopy procentowe bez zmian — Powell zapowiada ostrożność', summary: 'Rezerwa Federalna zdecydowała się nie zmieniać głównej stopy procentowej, sygnalizując dalszą ostrożność wobec trwałej inflacji.', url: '#', source: 'Bloomberg (DEMO)', category: 'makro' },
-  { id: '2', title: 'Bitcoin przebija 67 000 USD — ETF spot przyciągają rekordowe napływy', summary: 'Spot Bitcoin ETF zarejestrowały w piątek napływ ponad 600 mln USD, windując cenę do najwyższego poziomu od tygodnia.', url: '#', source: 'CoinDesk (DEMO)', category: 'krypto' },
-  { id: '3', title: 'NVIDIA bije prognozy — przychody AI wzrosły o 427% r/r', summary: 'Producent chipów opublikował wyniki znacznie powyżej oczekiwań analityków. Dział centrów danych odnotował rekordowe przychody.', url: '#', source: 'Reuters (DEMO)', category: 'wyniki' },
-  { id: '4', title: 'PKB Niemiec kurczy się drugi kwartał z rzędu — recesja techniczna', summary: 'Największa gospodarka Europy oficjalnie weszła w recesję techniczną. Przemysł motoryzacyjny przeżywa największy kryzys od dekady.', url: '#', source: 'FT (DEMO)', category: 'makro' },
-  { id: '5', title: 'Apple zapowiada nową generację chipów M4 — wydajność AI wzrośnie 3x', summary: 'Premiera nowej linii MacBook Pro z procesorem M4 planowana na jesień. Układ Neural Engine ma być 3-krotnie szybszy od poprzednika.', url: '#', source: 'The Verge (DEMO)', category: 'tech' },
-  { id: '6', title: 'Ethereum po aktualizacji Dencun — opłaty na L2 spadły o 90%', summary: 'Proto-danksharding drastycznie obniżył koszty transakcji na sieciach drugiej warstwy. Arbitrum i Optimism notują rekordową aktywność.', url: '#', source: 'Decrypt (DEMO)', category: 'krypto' },
+  { id: '1', title: 'Fed utrzymuje stopy — Powell sygnalizuje ostrożność wobec inflacji usługowej', summary: 'Rezerwa Federalna pozostawiła stopy bez zmian. Powell podkreślił, że inflacja usługowa pozostaje powyżej celu i bank centralny nie spieszy się z obniżkami.', url: '#', source: 'Bloomberg (DEMO)', category: 'makro' },
+  { id: '2', title: 'Bitcoin powyżej 103 000 USD — instytucje akumulują po korekcji', summary: 'Spot Bitcoin ETF zarejestrowały napływ ponad 800 mln USD. Analitycy wskazują na silne wsparcie przy 100 000 USD jako kluczowy poziom techniczny.', url: '#', source: 'CoinDesk (DEMO)', category: 'krypto' },
+  { id: '3', title: 'NVIDIA kapitalizacja 5,7 bln USD — wyprzedziła Apple i Microsoft', summary: 'Producent chipów AI stał się najwyżej wycenianą spółką na świecie. Popyt na układy H100/H200 wciąż przewyższa podaż.', url: '#', source: 'Reuters (DEMO)', category: 'wyniki' },
+  { id: '4', title: 'Złoto rekordowe na 3 238 USD — banki centralne kupują historycznie', summary: 'Popyt banków centralnych na złoto osiągnął najwyższy poziom od dekad. Słabszy dolar i napięcia geopolityczne napędzają wzrosty.', url: '#', source: 'FT (DEMO)', category: 'makro' },
+  { id: '5', title: 'Apple Intelligence przyspiesza — sprzedaż iPhone w Chinach rośnie', summary: 'Nowe funkcje AI w iOS zwiększyły sprzedaż w Azji. Akcja Apple wzrosła 18% od początku roku, kapitalizacja przekroczyła 4,5 bln USD.', url: '#', source: 'The Verge (DEMO)', category: 'tech' },
+  { id: '6', title: 'Ethereum 2 400 USD — aktualizacja Pectra zwiększa przepustowość sieci', summary: 'Najnowsza aktualizacja Ethereum podwoiła przepustowość. Opłaty transakcyjne na L2 pozostają na historycznie niskich poziomach.', url: '#', source: 'Decrypt (DEMO)', category: 'krypto' },
 ]
 
 export function getMockNews(): NewsItem[] {
@@ -109,24 +109,24 @@ export function getMockCalendar(): EconomicEvent[] {
 
 export function getMockAISummary(): MarketSummary {
   return {
-    sentiment: 'bullish',
-    sentimentScore: 63,
+    sentiment: 'neutral',
+    sentimentScore: 48,
     summary:
-      'Rynki wykazują umiarkowanie pozytywny sentyment. Sektor technologiczny prowadzi wzrosty napędzane wynikami NVIDIA i oczekiwaniami wokół AI. Rynek kryptowalut odrabia straty po korekcji — Bitcoin stabilizuje się powyżej kluczowego wsparcia na 65 000 USD. Główne ryzyko: dane inflacyjne z USA i możliwa zmiana narracji Fed.',
+      'Rynki w trybie wyczekiwania przed kluczowymi danymi makro. Bitcoin konsoliduje się powyżej 100 000 USD — kluczowe wsparcie utrzymane. NVIDIA napędza wzrosty w sektorze AI, S&P 500 blisko historycznych maksimów. Fed utrzymuje ostrożną postawę wobec trwałej inflacji usługowej.',
     keyPoints: [
-      'Indeks S&P 500 testuje opór przy historycznych szczytach',
-      'Napływy do Bitcoin ETF spot pozostają silne (600M USD/dzień)',
-      'DXY (indeks dolara) słabnie — korzystne dla surowców i krypto',
-      'Sektor energetyczny pod presją po danych OPEC',
-      'Yield 10Y UST: 4.42% — rynek wycenia 2 obniżki Fed w 2024',
+      'Bitcoin > 100 000 USD — historyczny poziom wsparcia utrzymany',
+      'NVIDIA kapitalizacja przekroczyła 5,7 bln USD — lider AI',
+      'Złoto rekordowe — powyżej 3 200 USD/oz, popyt banków centralnych',
+      'DXY poniżej 101 — słabszy dolar korzystny dla rynków wschodzących',
+      'Fed: brak zmian stóp, rynek wycenia 1-2 obniżki do końca 2025',
     ],
     sectors: [
-      { name: 'Technologia', performance: 1.8 },
-      { name: 'Krypto', performance: 2.1 },
-      { name: 'Energia', performance: -0.9 },
-      { name: 'Finanse', performance: 0.4 },
-      { name: 'Ochrona zdrowia', performance: -0.2 },
-      { name: 'Przemysł', performance: 0.7 },
+      { name: 'Technologia', performance: 1.2 },
+      { name: 'Krypto', performance: -1.8 },
+      { name: 'Energia', performance: -1.1 },
+      { name: 'Finanse', performance: 0.3 },
+      { name: 'Ochrona zdrowia', performance: 0.5 },
+      { name: 'Przemysł', performance: -0.4 },
     ],
     timestamp: new Date().toISOString(),
     isDemo: true,
