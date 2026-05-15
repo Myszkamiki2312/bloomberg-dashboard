@@ -6,7 +6,7 @@ const BASE = 'https://query1.finance.yahoo.com'
 const EXCHANGE_SUFFIXES = ['.WA', '.DE', '.L', '.PA', '.MI', '.MC', '.AS', '.BR', '.LS', '.SW']
 
 async function fetchYahooChartRaw(ticker: string, params: string): Promise<any> {
-  const res = await fetch(`${BASE}/v8/finance/chart/${ticker}?${params}`, {
+  const res = await fetch(`${BASE}/v8/finance/chart/${encodeURIComponent(ticker)}?${params}`, {
     headers: { 'User-Agent': 'Mozilla/5.0' },
     next: { revalidate: 60 },
     signal: AbortSignal.timeout(6000),
