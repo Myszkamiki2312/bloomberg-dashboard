@@ -9,6 +9,7 @@ export function formatPrice(price: number, decimals?: number): string {
 }
 
 export function formatCurrency(value: number, currency = 'USD'): string {
+  if (!isFinite(value)) return '—'
   return new Intl.NumberFormat('pl-PL', {
     style: 'currency',
     currency,
