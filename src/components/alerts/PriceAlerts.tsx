@@ -12,15 +12,18 @@ export default function PriceAlerts() {
   const [symbol, setSymbol] = useState('')
   const [price, setPrice] = useState('')
   const [direction, setDirection] = useState<'above' | 'below'>('above')
+  const [error, setError] = useState<string | null>(null)
 
   const handleAdd = () => {
     const targetPrice = parseFloat(price)
     // Sanitize symbol — same rules as the prices API: only A-Z 0-9 . -
     const cleanSymbol = symbol.trim().replace(/[^A-Z0-9.\-]/gi, '').toUpperCase().slice(0, 12)
-    if (!cleanSymbol || !isFinite(targetPrice) || targetPrice <= 0) return
+    if (!cleanSymbol) { setError('Wprowadź symbol'); return }
+    if (!isFinite(targetPrice) || targetPrice <= 0) { setError('Podaj prawidłową cenę'); return }
     addAlert({ symbol: cleanSymbol, targetPrice, direction, active: true })
     setSymbol('')
     setPrice('')
+    setError(null)
     setOpen(false)
   }
 
@@ -35,7 +38,7 @@ export default function PriceAlerts() {
       className="h-full"
       action={
         <button
-          onClick={() => { setSymbol(selectedSymbol); setOpen(!open) }}
+          onClick={() => { setSymbol(selectedSymbol); setError(null); setOpen(!open) }}
           className="text-[10px] border border-[#00ff41] text-[#00ff41] px-2 py-0.5 hover:bg-[#00ff41] hover:text-black transition-colors"
         >
           + Alert
@@ -48,18 +51,30 @@ export default function PriceAlerts() {
             <div className="flex gap-2">
               <input
                 value={symbol}
-                onChange={e => setSymbol(e.target.value)}
+                onChange={e => { setSymbol(e.target.value); setError(null) }}
                 placeholder="Symbol"
-                className="flex-1 bg-black border border-[#1c1c1c] px-2 py-1 text-[11px] text-[#c8c8c8] outline-none focus:border-[#00ff41]"
+                className={clsx(
+                  'flex-1 bg-black border px-2 py-1 text-[11px] text-[#c8c8c8] outline-none focus:border-[#00ff41]',
+                  error && !symbol.trim() ? 'border-[#ff0040]' : 'border-[#1c1c1c]'
+                )}
               />
               <input
                 value={price}
-                onChange={e => setPrice(e.target.value)}
+                onChange={e => { setPrice(e.target.value); setError(null) }}
+                onKeyDown={e => e.key === 'Enter' && handleAdd()}
                 type="number"
                 placeholder="Cena"
-                className="flex-1 bg-black border border-[#1c1c1c] px-2 py-1 text-[11px] text-[#c8c8c8] outline-none focus:border-[#00ff41]"
+                className={clsx(
+                  'flex-1 bg-black border px-2 py-1 text-[11px] text-[#c8c8c8] outline-none focus:border-[#00ff41]',
+                  error && symbol.trim() ? 'border-[#ff0040]' : 'border-[#1c1c1c]'
+                )}
               />
             </div>
+            {error && (
+              <div className="text-[10px] text-[#ff0040] flex items-center gap-1">
+                <span>✕</span> {error}
+              </div>
+            )}
             <div className="flex gap-2">
               {(['above', 'below'] as const).map(d => (
                 <button
@@ -82,7 +97,7 @@ export default function PriceAlerts() {
               <button onClick={handleAdd} className="flex-1 py-0.5 text-[10px] border border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black transition-colors">
                 Utwórz
               </button>
-              <button onClick={() => setOpen(false)} className="flex-1 py-0.5 text-[10px] border border-[#1c1c1c] text-[#555] hover:border-[#ff0040] hover:text-[#ff0040] transition-colors">
+              <button onClick={() => { setOpen(false); setError(null) }} className="flex-1 py-0.5 text-[10px] border border-[#1c1c1c] text-[#555] hover:border-[#ff0040] hover:text-[#ff0040] transition-colors">
                 Anuluj
               </button>
             </div>
