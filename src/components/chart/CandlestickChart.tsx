@@ -137,8 +137,9 @@ export default function CandlestickChart() {
 
       const ro = new ResizeObserver(applySize)
       ro.observe(chartRef.current)
-      window.addEventListener('resize', applySize)
-      removeResizeListener = () => { ro.disconnect(); window.removeEventListener('resize', applySize) }
+      // ResizeObserver covers both element and window resize — no need for a
+      // separate window 'resize' listener that would fire applySize twice
+      removeResizeListener = () => { ro.disconnect() }
     }
 
     init()

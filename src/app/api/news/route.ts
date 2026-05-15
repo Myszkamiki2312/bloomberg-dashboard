@@ -71,8 +71,13 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
       .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&nbsp;/g, ' ')
       .slice(0, 200)
 
+    // Use URL as ID when valid (unique per article); fall back to title slice
+    const itemId = link !== '#'
+      ? link.slice(0, 200)
+      : (cleanTitle.slice(0, 80) + pubDate.slice(0, 30))
+
     items.push({
-      id: (link + pubDate).slice(0, 120),
+      id: itemId,
       title: cleanTitle,
       summary: cleanSummary,
       url: link.trim(),
