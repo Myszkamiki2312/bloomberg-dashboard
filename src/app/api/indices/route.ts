@@ -29,6 +29,7 @@ async function fetchQuote(ticker: string): Promise<{ price: number; prev: number
       {
         headers: { 'User-Agent': 'Mozilla/5.0' },
         next: { revalidate: 60 },
+        signal: AbortSignal.timeout(6000),
       }
     )
     if (!res.ok) return null
