@@ -230,6 +230,11 @@ export default function CandlestickChart() {
             <span className="blink text-[#00ff41] mr-2">█</span> Ładowanie wykresu...
           </div>
         )}
+        {!isLoading && !clearing && data !== undefined && chartBars.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center text-[#444] text-xs z-10">
+            Brak danych dla {selectedSymbol}
+          </div>
+        )}
         <div ref={chartRef} className="w-full h-full" />
       </div>
     </TerminalCard>
