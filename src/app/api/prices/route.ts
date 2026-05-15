@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
   const symbolsParam = searchParams.get('symbols')
 
   if (!symbolsParam) {
-    return NextResponse.json(getMockPrices())
+    return NextResponse.json(getMockPrices(), {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+    })
   }
 
   const symbols = symbolsParam.split(',').slice(0, 50).map(s => {
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
     console.error('Prices API error:', err)
     return NextResponse.json(
       getMockPrices().filter(p => symbols.some(s => s.symbol === p.symbol)),
-      { status: 200 }
+      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
     )
   }
 }

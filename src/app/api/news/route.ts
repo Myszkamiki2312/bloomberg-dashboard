@@ -114,7 +114,9 @@ export async function GET() {
   const combined = [...plNews, ...enNews]
 
   if (combined.length === 0) {
-    return NextResponse.json(getMockNews())
+    return NextResponse.json(getMockNews(), {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+    })
   }
 
   const seen = new Set<string>()

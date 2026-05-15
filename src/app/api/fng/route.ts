@@ -30,6 +30,9 @@ export async function GET() {
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
     })
   } catch {
-    return NextResponse.json({ value: 0, label: '—' })
+    // Short cache on errors so a temporary outage doesn't persist too long
+    return NextResponse.json({ value: 0, label: '—' }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+    })
   }
 }

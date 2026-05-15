@@ -30,6 +30,8 @@ export async function GET() {
       headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
     })
   } catch {
-    return NextResponse.json({ btcDominance: 0, totalMarketCapUsd: 0, totalVolume24hUsd: 0 })
+    return NextResponse.json({ btcDominance: 0, totalMarketCapUsd: 0, totalVolume24hUsd: 0 }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+    })
   }
 }
