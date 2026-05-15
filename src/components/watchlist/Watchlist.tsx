@@ -33,6 +33,7 @@ export default function Watchlist() {
     fetcher,
     {
       refreshInterval: 30000,
+      revalidateOnFocus: false,
       onSuccess: data => {
         const newFlash: Record<string, 'up' | 'down' | null> = {}
         const priceMap: Record<string, number> = {}
