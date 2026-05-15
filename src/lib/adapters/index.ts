@@ -51,7 +51,9 @@ export async function getOHLC(symbol: string, type: 'stock' | 'crypto', days = 9
   if (DEMO_MODE) return getMockOHLC(symbol, days)
 
   try {
-    if (type === 'crypto' && getCoinId(symbol)) {
+    if (type === 'crypto') {
+      // Unknown crypto (not in COIN_IDS) → skip stock APIs, go straight to mock
+      if (!getCoinId(symbol)) return getMockOHLC(symbol, days)
       const data = await fetchCryptoOHLC(symbol, Math.min(days, 365))
       if (data.length > 0) return data
     } else {

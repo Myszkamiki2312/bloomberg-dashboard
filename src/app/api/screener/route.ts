@@ -45,7 +45,7 @@ export async function GET() {
 
   const mockPrices = getMockPrices()
 
-  // Fetch OHLCV in parallel — crypto gets real data, stocks use mock
+  // Fetch OHLCV in parallel — both crypto and stocks use real data
   const ohlcvResults = await Promise.allSettled(
     SCREENER_SYMBOLS.map(({ symbol, type }) => getRealOHLC(symbol, type))
   )
