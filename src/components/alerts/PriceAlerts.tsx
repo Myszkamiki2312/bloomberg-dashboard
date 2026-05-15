@@ -17,7 +17,7 @@ export default function PriceAlerts() {
     const targetPrice = parseFloat(price)
     // Sanitize symbol — same rules as the prices API: only A-Z 0-9 . -
     const cleanSymbol = symbol.trim().replace(/[^A-Z0-9.\-]/gi, '').toUpperCase().slice(0, 12)
-    if (!cleanSymbol || isNaN(targetPrice) || targetPrice <= 0) return
+    if (!cleanSymbol || !isFinite(targetPrice) || targetPrice <= 0) return
     addAlert({ symbol: cleanSymbol, targetPrice, direction, active: true })
     setSymbol('')
     setPrice('')

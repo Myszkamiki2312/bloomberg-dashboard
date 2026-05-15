@@ -239,8 +239,9 @@ function PositionEditor({
   const handleSave = () => {
     const quantity = parseFloat(qty)
     const avgPrice = parseFloat(avg)
-    if (isNaN(quantity) || quantity < 0) return
-    if (isNaN(avgPrice) || avgPrice <= 0) return
+    // Reject NaN, Infinity, negative quantities, and non-positive prices
+    if (!isFinite(quantity) || quantity < 0) return
+    if (!isFinite(avgPrice) || avgPrice <= 0) return
     updateWatchlistEntry(entry.symbol, { quantity, avgPrice })
     onClose()
   }
