@@ -21,10 +21,11 @@ export default function MarketOverview() {
   const { data: fngData } = useSWR<{ value: number; label: string }>(
     '/api/fng', fetcher, { refreshInterval: 3600000 }
   )
+  const { data: globalData } = useSWR<{ btcDominance: number; totalMarketCapUsd: number }>(
+    '/api/crypto-global', fetcher, { refreshInterval: 300000 }
+  )
 
-  const btc = prices.find(p => p.symbol === 'BTC')
-  const cryptoMcap = prices.filter(p => p.type === 'crypto').reduce((s, p) => s + p.marketCap, 0)
-  const btcDom = cryptoMcap > 0 && btc ? (btc.marketCap / cryptoMcap) * 100 : 0
+  const btcDom = globalData?.btcDominance ?? 0
 
   const fg = fngData?.value ?? 0
   const fgLabel = fngData?.label ?? '...'
@@ -81,12 +82,19 @@ export default function MarketOverview() {
           </div>
         )}
 
-        {/* BTC dominance */}
+        {/* BTC dominance + total market cap */}
         {btcDom > 0 && (
           <div className="px-2 py-1.5 border-b border-[#1c1c1c]">
             <div className="flex items-center justify-between text-[10px] mb-1">
               <span className="text-[#888]">Dominacja BTC</span>
-              <span className="num font-bold text-[#ffaa00]">{btcDom.toFixed(1)}%</span>
+              <div className="flex items-center gap-2">
+                {globalData?.totalMarketCapUsd ? (
+                  <span className="text-[#444] text-[9px]">
+                    Total: <span className="text-[#666]">{formatVolume(globalData.totalMarketCapUsd)}</span>
+                  </span>
+                ) : null}
+                <span className="num font-bold text-[#ffaa00]">{btcDom.toFixed(1)}%</span>
+              </div>
             </div>
             <div className="bar-track">
               <div className="bar-fill-pos" style={{ width: `${btcDom}%`, height: 3 }} />
