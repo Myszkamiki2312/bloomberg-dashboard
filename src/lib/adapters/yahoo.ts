@@ -41,7 +41,7 @@ export async function fetchYahooQuote(symbol: string): Promise<AssetPrice | null
     const resolved = await resolveYahooTicker(symbol, 'interval=1d&range=2d')
     if (!resolved) return null
 
-    const { result: meta_result, ticker } = resolved
+    const { result: meta_result } = resolved
     const meta = meta_result.meta
     const quote = meta_result.indicators?.quote?.[0]
     const closes = quote?.close ?? []
