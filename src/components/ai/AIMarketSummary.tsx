@@ -13,7 +13,7 @@ const SENTIMENT_CONFIG = {
 }
 
 export default function AIMarketSummary() {
-  const { data, isLoading } = useSWR<MarketSummary>('/api/ai-summary', fetcher, {
+  const { data, isLoading, error } = useSWR<MarketSummary>('/api/ai-summary', fetcher, {
     refreshInterval: 300000,
     revalidateOnFocus: false,
   })
@@ -32,6 +32,11 @@ export default function AIMarketSummary() {
         <div className="p-3 flex items-center gap-2 text-[11px] text-[#555]">
           <span className="blink text-[#00ff41]">█</span>
           Analizuję rynek...
+        </div>
+      ) : error && !data ? (
+        <div className="p-3 flex flex-col gap-1 text-[11px]">
+          <span className="text-[#ff0040]">⚠ Błąd ładowania podsumowania AI</span>
+          <span className="text-[#444] text-[10px]">{error.message ?? 'Sprawdź klucze API (GROQ_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY)'}</span>
         </div>
       ) : data ? (
         <div className="flex flex-col gap-0 overflow-auto">
