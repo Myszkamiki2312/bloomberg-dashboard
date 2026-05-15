@@ -54,6 +54,7 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<AssetPrice[]
   const res = await fetch(url, {
     headers: headers(),
     next: { revalidate: 30 },
+    signal: AbortSignal.timeout(8000),
   })
 
   if (!res.ok) throw new Error(`CoinGecko ${res.status}`)
@@ -89,6 +90,7 @@ export async function fetchCryptoOHLC(symbol: string, days = 30): Promise<OHLCBa
   const res = await fetch(url, {
     headers: headers(),
     next: { revalidate: 300 },
+    signal: AbortSignal.timeout(10000),
   })
 
   if (!res.ok) throw new Error(`CoinGecko OHLC ${res.status}`)
