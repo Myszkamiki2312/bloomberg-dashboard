@@ -25,17 +25,21 @@ export async function getPrices(symbols: { symbol: string; type: 'stock' | 'cryp
     }
   }
 
-  for (const symbol of stockSymbols) {
-    try {
+  // Fetch all stock quotes in parallel — sequential loop was causing
+  // N × 6 s worst-case latency (one timeout per symbol)
+  const stockResults = await Promise.allSettled(
+    stockSymbols.map(async symbol => {
       const price = (await fetchStockQuote(symbol)) ?? (await fetchYahooQuote(symbol))
-      if (price) {
-        results.push(price)
-      } else {
-        const mock = mockPrices.find(p => p.symbol === symbol)
-        if (mock) results.push(mock)
-      }
-    } catch {
-      const mock = mockPrices.find(p => p.symbol === symbol)
+      return { symbol, price }
+    })
+  )
+
+  for (let i = 0; i < stockResults.length; i++) {
+    const res = stockResults[i]
+    if (res.status === 'fulfilled' && res.value.price) {
+      results.push(res.value.price)
+    } else {
+      const mock = mockPrices.find(p => p.symbol === stockSymbols[i])
       if (mock) results.push(mock)
     }
   }
