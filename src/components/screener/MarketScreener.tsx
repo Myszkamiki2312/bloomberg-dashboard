@@ -27,7 +27,7 @@ export default function MarketScreener() {
   const [sort, setSort] = useState<SortKey>('volume')
   const [dir, setDir] = useState<'asc' | 'desc'>('desc')
   const [filter, setFilter] = useState<'all' | 'stock' | 'crypto'>('all')
-  const setSelectedSymbol = useStore(s => s.setSelectedSymbol)
+  const { setSelectedSymbol, selectedSymbol } = useStore(s => ({ setSelectedSymbol: s.setSelectedSymbol, selectedSymbol: s.selectedSymbol }))
 
   const { data = [], isLoading, error } = useSWR<ScreenerItem[]>('/api/screener', fetcher, {
     refreshInterval: 60000,
@@ -106,12 +106,14 @@ export default function MarketScreener() {
               </tr>
             ) : sorted.map(item => {
               const trend = TREND_MAP[item.trend] ?? TREND_MAP.neutral
+              const isSelected = item.symbol === selectedSymbol
               return (
                 <tr key={item.symbol}
                     onClick={() => setSelectedSymbol(item.symbol, item.type)}
-                    className="border-b border-[#0d0d0d] hover:bg-[#0f0f0f] cursor-pointer tr-hover">
+                    className={clsx('border-b border-[#0d0d0d] cursor-pointer tr-hover', isSelected ? 'bg-[#0d1a0d]' : 'hover:bg-[#0f0f0f]')}>
                   <td className="px-2 py-1">
                     <div className="flex items-center gap-1">
+                      {isSelected && <span className="text-[#00ff41] text-[10px] shrink-0">▶</span>}
                       <span className={clsx('text-[8px] border px-0.5 shrink-0',
                         item.type === 'crypto' ? 'text-[#00aaaa] border-[#005555]' : 'text-[#0077cc] border-[#003366]'
                       )}>
