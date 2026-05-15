@@ -48,7 +48,14 @@ export const useStore = create<AppStore>()(
       },
 
       removeFromWatchlist: symbol =>
-        set(s => ({ watchlist: s.watchlist.filter(w => w.symbol !== symbol) })),
+        set(s => {
+          const next = s.watchlist.filter(w => w.symbol !== symbol)
+          // If the removed symbol was selected, fall back to the first remaining entry
+          const newSelected = s.selectedSymbol === symbol && next.length > 0
+            ? { selectedSymbol: next[0].symbol, selectedType: next[0].type }
+            : {}
+          return { watchlist: next, ...newSelected }
+        }),
 
       updateWatchlistEntry: (symbol, patch) =>
         set(s => ({
