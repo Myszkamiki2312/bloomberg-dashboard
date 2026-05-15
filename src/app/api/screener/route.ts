@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getMockOHLC, getMockPrices } from '@/lib/adapters/mock'
 import { getPrices } from '@/lib/adapters'
+import { fetchCryptoOHLC } from '@/lib/adapters/coingecko'
 import { calculateRSI, getTrend, calculateVolatility } from '@/lib/utils/rsi'
 import type { ScreenerItem } from '@/types'
 
@@ -20,22 +21,35 @@ const SCREENER_SYMBOLS = [
   { symbol: 'MSFT', type: 'stock'  as const },
 ]
 
+async function getRealOHLC(symbol: string, type: 'crypto' | 'stock'): Promise<number[]> {
+  if (DEMO_MODE || type === 'stock') return getMockOHLC(symbol, 60).map(b => b.close)
+  try {
+    const bars = await fetchCryptoOHLC(symbol, 30)
+    if (bars.length >= 15) return bars.map(b => b.close)
+  } catch {}
+  return getMockOHLC(symbol, 60).map(b => b.close)
+}
+
 export async function GET() {
-  // Live mode: fetch real prices; RSI/trend/volatility use mock OHLCV
-  // (fetching 60-day OHLCV for each symbol in parallel would exceed free API limits)
   const livePrices = DEMO_MODE
     ? getMockPrices()
     : await getPrices(SCREENER_SYMBOLS).catch(() => getMockPrices())
 
   const mockPrices = getMockPrices()
 
-  const screener: ScreenerItem[] = SCREENER_SYMBOLS.map(({ symbol, type }) => {
+  // Fetch OHLCV in parallel — crypto gets real data, stocks use mock
+  const ohlcvResults = await Promise.allSettled(
+    SCREENER_SYMBOLS.map(({ symbol, type }) => getRealOHLC(symbol, type))
+  )
+
+  const screener: ScreenerItem[] = SCREENER_SYMBOLS.map(({ symbol, type }, i) => {
     const live = livePrices.find(p => p.symbol === symbol)
     const mock = mockPrices.find(p => p.symbol === symbol)
     const asset = live ?? mock!
 
-    const bars = getMockOHLC(symbol, 60)
-    const closes = bars.map(b => b.close)
+    const closes = ohlcvResults[i].status === 'fulfilled'
+      ? ohlcvResults[i].value
+      : getMockOHLC(symbol, 60).map(b => b.close)
 
     return {
       symbol: asset.symbol,
@@ -51,6 +65,6 @@ export async function GET() {
   })
 
   return NextResponse.json(screener, {
-    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+    headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
   })
 }
