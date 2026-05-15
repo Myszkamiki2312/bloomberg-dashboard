@@ -9,6 +9,7 @@ async function fetchYahooChartRaw(ticker: string, params: string): Promise<any> 
   const res = await fetch(`${BASE}/v8/finance/chart/${ticker}?${params}`, {
     headers: { 'User-Agent': 'Mozilla/5.0' },
     next: { revalidate: 60 },
+    signal: AbortSignal.timeout(6000),
   })
   if (!res.ok) return null
   const json = await res.json()
