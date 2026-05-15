@@ -70,8 +70,8 @@ export default function AIMarketSummary() {
               <div className="flex flex-col gap-1">
                 {data.sectors.map(sector => {
                   const perf = Number(sector.performance) || 0
-                  // Scale: ±15% performance → ±50% of track (each half = 50%)
-                  const pct = Math.min(Math.abs(perf) * (50 / 15), 50)
+                  // Scale: ±3% performance → ±50% of track — fits typical daily sector moves
+                  const pct = Math.min(Math.abs(perf) * (50 / 3), 50)
                   const pos = perf >= 0
                   return (
                   <div key={sector.name} className="flex items-center gap-2">
