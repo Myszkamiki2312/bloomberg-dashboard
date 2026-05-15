@@ -46,7 +46,7 @@ export async function fetchYahooQuote(symbol: string): Promise<AssetPrice | null
     const closes = quote?.close ?? []
 
     const current = meta.regularMarketPrice ?? closes[closes.length - 1] ?? 0
-    const prev = meta.previousClose ?? closes[closes.length - 2] ?? current
+    const prev = meta.chartPreviousClose ?? meta.previousClose ?? closes[closes.length - 2] ?? current
     const change = current - prev
     const changePct = prev > 0 ? (change / prev) * 100 : 0
 
