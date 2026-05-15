@@ -41,11 +41,24 @@ export default function CandlestickChart() {
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
   const pendingData = useRef<OHLCBar[]>([])
 
-  const { data = [], isLoading } = useSWR<OHLCBar[]>(
-    `/api/chart?symbol=${selectedSymbol}&type=${selectedType}&days=${days}`,
-    fetcher,
-    { revalidateOnFocus: false }
-  )
+  const swrKey = `/api/chart?symbol=${selectedSymbol}&type=${selectedType}&days=${days}`
+  const { data, isLoading } = useSWR<OHLCBar[]>(swrKey, fetcher, { revalidateOnFocus: false })
+
+  // Clear chart when symbol/days change so stale data from prev symbol isn't shown
+  const prevKey = useRef(swrKey)
+  const [clearing, setClearing] = useState(false)
+  useEffect(() => {
+    if (prevKey.current !== swrKey) {
+      prevKey.current = swrKey
+      setClearing(true)
+      if (seriesRef.current) seriesRef.current.setData([])
+    }
+  }, [swrKey])
+  useEffect(() => {
+    if (clearing && data && data.length > 0) setClearing(false)
+  }, [data, clearing])
+
+  const displayData = clearing || !data ? [] : data
 
   useEffect(() => {
     if (!chartRef.current) return
@@ -140,9 +153,9 @@ export default function CandlestickChart() {
   }, [])
 
   useEffect(() => {
-    pendingData.current = data
-    if (!seriesRef.current || !data.length) return
-    const clean = cleanBars(data)
+    pendingData.current = displayData
+    if (!seriesRef.current || !displayData.length) return
+    const clean = cleanBars(displayData)
     if (!clean.length) return
 
     const isUp = clean[clean.length - 1].close >= clean[0].close
@@ -155,10 +168,10 @@ export default function CandlestickChart() {
 
     seriesRef.current.setData(clean.map(b => ({ time: b.time, value: b.close })))
     chartInstance.current?.timeScale().fitContent()
-  }, [data])
+  }, [displayData])
 
   // Use cleaned bars for header stats
-  const chartBars = cleanBars(data)
+  const chartBars = cleanBars(displayData)
 
   const lastBar = chartBars[chartBars.length - 1]
   const firstBar = chartBars[0]
@@ -211,7 +224,7 @@ export default function CandlestickChart() {
       )}
 
       <div className="relative flex-1 min-h-[200px]">
-        {isLoading && !data.length && (
+        {(isLoading || clearing) && !displayData.length && (
           <div className="absolute inset-0 flex items-center justify-center text-[#333] text-xs z-10">
             <span className="blink text-[#00ff41] mr-2">█</span> Ładowanie wykresu...
           </div>
