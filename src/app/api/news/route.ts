@@ -67,7 +67,7 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
       summary: description.replace(/<[^>]*>/g, '').trim().slice(0, 200),
       url: link.trim(),
       source: feed.source,
-      publishedAt: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+      publishedAt: (() => { try { return pubDate ? new Date(pubDate).toISOString() : new Date().toISOString() } catch { return new Date().toISOString() } })(),
       category: feed.lang === 'pl' ? 'pl' : undefined,
     })
   }

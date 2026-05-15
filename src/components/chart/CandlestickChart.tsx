@@ -104,10 +104,11 @@ export default function CandlestickChart() {
       seriesRef.current = areaSeries
 
       if (pendingData.current.length > 0) {
-        const sorted = [...pendingData.current].sort((a, b) => a.time.localeCompare(b.time))
-        const deduped = sorted.filter((bar, i, arr) => i === 0 || bar.time !== arr[i - 1].time)
-        areaSeries.setData(deduped.map(b => ({ time: b.time, value: b.close })))
-        chart.timeScale().fitContent()
+        const clean = cleanBars(pendingData.current)
+        if (clean.length > 0) {
+          areaSeries.setData(clean.map(b => ({ time: b.time, value: b.close })))
+          chart.timeScale().fitContent()
+        }
       }
 
       const applySize = () => {
