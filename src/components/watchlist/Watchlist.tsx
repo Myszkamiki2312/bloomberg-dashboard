@@ -196,8 +196,8 @@ export default function Watchlist() {
         <AddSymbol />
       </div>
 
-      {/* Portfolio summary */}
-      {hasPortfolio && totalCost > 0 && (
+      {/* Portfolio summary — only shown once all prices loaded to avoid fake P&L on mount */}
+      {hasPortfolio && totalCost > 0 && portfolioPricesLoaded && (
         <div className="border-t border-[#1c1c1c] px-2 py-2 bg-[#050505] mt-auto">
           <div className="flex items-center justify-between text-[10px] mb-1">
             <span className="text-[#555] uppercase tracking-widest text-[9px]">Portfel</span>
