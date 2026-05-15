@@ -51,6 +51,7 @@ export function formatTime(dateStr: string): string {
 export function formatRelativeTime(dateStr: string): string {
   const now = Date.now()
   const then = new Date(dateStr).getTime()
+  if (isNaN(then)) return 'nieznana data'
   const diffMs = now - then
   const diffMin = Math.floor(diffMs / 60000)
   const diffHrs = Math.floor(diffMin / 60)
