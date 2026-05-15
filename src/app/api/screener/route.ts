@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getMockOHLC, getMockPrices } from '@/lib/adapters/mock'
 import { getPrices } from '@/lib/adapters'
 import { fetchCryptoOHLC } from '@/lib/adapters/coingecko'
+import { fetchYahooOHLC } from '@/lib/adapters/yahoo'
 import { calculateRSI, getTrend, calculateVolatility } from '@/lib/utils/rsi'
 import type { ScreenerItem } from '@/types'
 
@@ -22,11 +23,18 @@ const SCREENER_SYMBOLS = [
 ]
 
 async function getRealOHLC(symbol: string, type: 'crypto' | 'stock'): Promise<number[]> {
-  if (DEMO_MODE || type === 'stock') return getMockOHLC(symbol, 60).map(b => b.close)
-  try {
-    const bars = await fetchCryptoOHLC(symbol, 30)
-    if (bars.length >= 15) return bars.map(b => b.close)
-  } catch {}
+  if (DEMO_MODE) return getMockOHLC(symbol, 60).map(b => b.close)
+  if (type === 'crypto') {
+    try {
+      const bars = await fetchCryptoOHLC(symbol, 30)
+      if (bars.length >= 15) return bars.map(b => b.close)
+    } catch {}
+  } else {
+    try {
+      const bars = await fetchYahooOHLC(symbol, 90)
+      if (bars.length >= 15) return bars.map(b => b.close)
+    } catch {}
+  }
   return getMockOHLC(symbol, 60).map(b => b.close)
 }
 
