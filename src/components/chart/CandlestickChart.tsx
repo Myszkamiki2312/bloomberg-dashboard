@@ -5,7 +5,7 @@ import type { IChartApi, ISeriesApi } from 'lightweight-charts'
 import { useStore } from '@/lib/store/useStore'
 import type { OHLCBar } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
-import { formatPrice, formatPercent } from '@/lib/utils/formatters'
+import { formatPrice } from '@/lib/utils/formatters'
 import { clsx } from 'clsx'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())

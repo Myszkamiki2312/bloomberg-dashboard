@@ -3,7 +3,7 @@ import useSWR from 'swr'
 import { clsx } from 'clsx'
 import type { AssetPrice } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
-import { formatPrice, formatPercent, formatVolume } from '@/lib/utils/formatters'
+import { formatPrice, formatVolume } from '@/lib/utils/formatters'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
