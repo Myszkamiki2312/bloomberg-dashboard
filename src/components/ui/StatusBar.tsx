@@ -95,7 +95,11 @@ export default function StatusBar({ isDemo }: { isDemo: boolean }) {
           >
             <span className="text-[#888] font-bold">{idx.symbol}</span>
             <span className="num text-[#c8c8c8]">
-              {idx.value < 10 ? idx.value.toFixed(3) : idx.value.toFixed(2)}
+              {idx.value < 10
+                ? idx.value.toFixed(3)
+                : idx.value < 1000
+                  ? idx.value.toFixed(2)
+                  : idx.value.toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
             <span className={clsx('num font-bold', idx.pct >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
               {idx.pct >= 0 ? '+' : ''}{idx.pct.toFixed(2)}%
