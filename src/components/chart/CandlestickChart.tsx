@@ -219,10 +219,6 @@ export default function CandlestickChart() {
     : 0
   const isUp = overallChange >= 0
 
-  // Current MA values for header display
-  const lastSma20 = (() => { const d = computeSMA(chartBars, 20); return d[d.length - 1]?.value })()
-  const lastSma50 = (() => { const d = computeSMA(chartBars, 50); return d[d.length - 1]?.value })()
-
   return (
     <TerminalCard
       title={`Wykres: ${selectedSymbol}`}
@@ -280,22 +276,6 @@ export default function CandlestickChart() {
           <span className="text-[#444]">O <span className="text-[#666]">{formatPrice(lastBar.open)}</span></span>
           <span className="text-[#444]">H <span className="text-[#00ff41]">{formatPrice(lastBar.high)}</span></span>
           <span className="text-[#444]">L <span className="text-[#ff0040]">{formatPrice(lastBar.low)}</span></span>
-          {lastSma20 && showMA.ma20 && (
-            <>
-              <span className="text-[#333]">│</span>
-              <span style={{ color: MA_CONFIG.ma20.color }} className="num text-[10px]">
-                MA20 <span className="font-bold">{formatPrice(lastSma20)}</span>
-              </span>
-            </>
-          )}
-          {lastSma50 && showMA.ma50 && (
-            <>
-              {!lastSma20 && <span className="text-[#333]">│</span>}
-              <span style={{ color: MA_CONFIG.ma50.color }} className="num text-[10px]">
-                MA50 <span className="font-bold">{formatPrice(lastSma50)}</span>
-              </span>
-            </>
-          )}
         </div>
       )}
 
