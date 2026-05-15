@@ -54,7 +54,7 @@ export default function Watchlist() {
   )
 
   const priceMap = Object.fromEntries(prices.map(p => [p.symbol, p]))
-  const maxVol = Math.max(...prices.map(p => p.volume24h), 1)
+  const maxVol = Math.max(...prices.map(p => isFinite(p.volume24h) ? p.volume24h : 0), 1)
 
   // Portfolio totals — wait for all position prices before computing P&L
   // (avoids showing large fake loss while prices are still loading)
