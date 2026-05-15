@@ -105,7 +105,11 @@ export default function Watchlist() {
           return (
             <div key={entry.symbol}>
               <div
-                onClick={() => setSelectedSymbol(entry.symbol, entry.type)}
+                onClick={() => {
+                  setSelectedSymbol(entry.symbol, entry.type)
+                  // Close editor if another row is clicked
+                  if (editingSymbol && editingSymbol !== entry.symbol) setEditingSymbol(null)
+                }}
                 className={clsx(
                   'grid px-2 py-1 cursor-pointer border-b border-[#111] text-[11px] transition-colors group relative',
                   flash === 'up' ? 'flash-up' : flash === 'down' ? 'flash-down' : '',
