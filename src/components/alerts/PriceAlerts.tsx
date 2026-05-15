@@ -7,7 +7,7 @@ import type { PriceAlert } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 
 export default function PriceAlerts() {
-  const { alerts, addAlert, removeAlert, selectedSymbol } = useStore()
+  const { alerts, addAlert, removeAlert, selectedSymbol, watchlist } = useStore()
   const [open, setOpen] = useState(false)
   const [symbol, setSymbol] = useState('')
   const [price, setPrice] = useState('')
@@ -97,7 +97,12 @@ export default function PriceAlerts() {
               Aktywne
             </div>
             {active.map(alert => (
-              <AlertRow key={alert.id} alert={alert} onRemove={removeAlert} />
+              <AlertRow
+                key={alert.id}
+                alert={alert}
+                onRemove={removeAlert}
+                missingFromWatchlist={!watchlist.some(w => w.symbol === alert.symbol)}
+              />
             ))}
           </div>
         )}
@@ -117,28 +122,43 @@ export default function PriceAlerts() {
   )
 }
 
-function AlertRow({ alert, onRemove }: { alert: PriceAlert; onRemove: (id: string) => void }) {
+function AlertRow({
+  alert,
+  onRemove,
+  missingFromWatchlist = false,
+}: {
+  alert: PriceAlert
+  onRemove: (id: string) => void
+  missingFromWatchlist?: boolean
+}) {
   return (
     <div className={clsx(
-      'flex items-center justify-between px-3 py-2 border-b border-[#1c1c1c] text-[11px] group hover:bg-[#111] transition-colors',
+      'flex flex-col px-3 py-2 border-b border-[#1c1c1c] text-[11px] group hover:bg-[#111] transition-colors',
       alert.triggered && 'opacity-60'
     )}>
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-[#ffaa00]">{alert.symbol}</span>
-        <span className={alert.direction === 'above' ? 'text-[#00ff41]' : 'text-[#ff0040]'}>
-          {alert.direction === 'above' ? '▲' : '▼'}
-        </span>
-        <span className="text-[#c8c8c8]">{formatPrice(alert.targetPrice)}</span>
-        {alert.triggered && (
-          <span className="text-[#ffaa00] text-[9px] border border-[#ffaa00] px-1">WYZWOLONY</span>
-        )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-[#ffaa00]">{alert.symbol}</span>
+          <span className={alert.direction === 'above' ? 'text-[#00ff41]' : 'text-[#ff0040]'}>
+            {alert.direction === 'above' ? '▲' : '▼'}
+          </span>
+          <span className="text-[#c8c8c8]">{formatPrice(alert.targetPrice)}</span>
+          {alert.triggered && (
+            <span className="text-[#ffaa00] text-[9px] border border-[#ffaa00] px-1">WYZWOLONY</span>
+          )}
+        </div>
+        <button
+          onClick={() => onRemove(alert.id)}
+          className="text-[#555] opacity-0 group-hover:opacity-100 hover:text-[#ff0040] transition-opacity text-[10px]"
+        >
+          ✕
+        </button>
       </div>
-      <button
-        onClick={() => onRemove(alert.id)}
-        className="text-[#555] opacity-0 group-hover:opacity-100 hover:text-[#ff0040] transition-opacity text-[10px]"
-      >
-        ✕
-      </button>
+      {missingFromWatchlist && !alert.triggered && (
+        <div className="text-[9px] text-[#ff6600] mt-0.5">
+          ⚠ Dodaj {alert.symbol} do watchlisty by monitorować
+        </div>
+      )}
     </div>
   )
 }
