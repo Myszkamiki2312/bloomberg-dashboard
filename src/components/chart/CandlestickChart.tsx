@@ -55,7 +55,8 @@ export default function CandlestickChart() {
     }
   }, [swrKey])
   useEffect(() => {
-    if (clearing && data && data.length > 0) setClearing(false)
+    // Clear the "clearing" state once new data arrives (even if empty — to show "Brak danych")
+    if (clearing && data !== undefined) setClearing(false)
   }, [data, clearing])
 
   const displayData = clearing || !data ? [] : data
