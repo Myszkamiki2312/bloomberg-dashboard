@@ -131,8 +131,8 @@ export default function MarketScreener() {
                   <td className="px-2 py-1 text-right">
                     <div className={clsx('num', RSI_COLOR(item.rsi))}>
                       {item.rsi}
-                      {item.rsi > 70 && <span className="text-[8px] ml-0.5">OB</span>}
-                      {item.rsi < 30 && <span className="text-[8px] ml-0.5">OS</span>}
+                      {item.rsi > 70 && <span className="text-[8px] ml-0.5" title="Wykupiony">OW</span>}
+                      {item.rsi < 30 && <span className="text-[8px] ml-0.5" title="Wyprzedany">WS</span>}
                     </div>
                     {/* RSI mini bar */}
                     <div className="bar-track w-full mt-0.5">
