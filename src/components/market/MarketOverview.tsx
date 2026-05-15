@@ -9,15 +9,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 const OVERVIEW_SYMBOLS = 'BTC:crypto,ETH:crypto,SOL:crypto,AAPL:stock,NVDA:stock,MSFT:stock'
 
-interface IndexRow { label: string; value: string; change: string; pos: boolean }
-const MOCK_INDICES: IndexRow[] = [
-  { label: 'S&P 500', value: '5 261.72', change: '+0.41%', pos: true  },
-  { label: 'NASDAQ',  value: '18 234',   change: '+0.68%', pos: true  },
-  { label: 'DJIA',    value: '39 721',   change: '+0.22%', pos: true  },
-  { label: 'VIX',     value: '14.23',    change: '-2.60%', pos: false },
-  { label: 'USD/PLN', value: '3.9542',   change: '-0.18%', pos: false },
-  { label: 'EUR/USD', value: '1.0847',   change: '+0.09%', pos: true  },
-]
+interface IndexRow { symbol: string; name: string; value: number; change: number; pct: number }
 
 export default function MarketOverview() {
   const { data: prices = [] } = useSWR<AssetPrice[]>(
@@ -25,6 +17,7 @@ export default function MarketOverview() {
     fetcher,
     { refreshInterval: 30000 }
   )
+  const { data: indices = [] } = useSWR<IndexRow[]>('/api/indices', fetcher, { refreshInterval: 60000 })
 
   const btc = prices.find(p => p.symbol === 'BTC')
   const cryptoMcap = prices.filter(p => p.type === 'crypto').reduce((s, p) => s + p.marketCap, 0)
@@ -38,22 +31,28 @@ export default function MarketOverview() {
       <div className="overflow-auto h-full">
 
         {/* Indices table */}
-        <div className="border-b border-[#1c1c1c]">
-          <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
-            Indeksy (mock)
-          </div>
-          {MOCK_INDICES.map(idx => (
-            <div key={idx.label} className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
-              <span className="text-[#888]">{idx.label}</span>
-              <div className="flex items-center gap-3">
-                <span className="num text-[#c8c8c8]">{idx.value}</span>
-                <span className={clsx('num font-bold w-14 text-right', idx.pos ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                  {idx.change}
-                </span>
-              </div>
+        {indices.length > 0 && (
+          <div className="border-b border-[#1c1c1c]">
+            <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
+              Indeksy
             </div>
-          ))}
-        </div>
+            {indices.map(idx => {
+              const pos = idx.pct >= 0
+              const decimals = idx.value < 10 ? 4 : idx.value < 1000 ? 2 : 2
+              return (
+                <div key={idx.symbol} className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
+                  <span className="text-[#888]">{idx.symbol}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="num text-[#c8c8c8]">{idx.value.toLocaleString('pl-PL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
+                    <span className={clsx('num font-bold w-14 text-right', pos ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {pos ? '+' : ''}{idx.pct.toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Crypto prices */}
         {prices.filter(p => p.type === 'crypto').length > 0 && (
