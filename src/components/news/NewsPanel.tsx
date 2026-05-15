@@ -50,9 +50,9 @@ function NewsEntry({ item }: { item: NewsItem }) {
   return (
     <a
       href={item.url !== '#' ? item.url : undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block px-3 py-2 hover:bg-[#111] transition-colors cursor-pointer group"
+      target={item.url !== '#' ? '_blank' : undefined}
+      rel={item.url !== '#' ? 'noopener noreferrer' : undefined}
+      className={`block px-3 py-2 hover:bg-[#111] transition-colors group ${item.url !== '#' ? 'cursor-pointer' : 'cursor-default'}`}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
         <p className="text-[11px] text-[#c8c8c8] leading-snug group-hover:text-[#00ff41] transition-colors line-clamp-2">
