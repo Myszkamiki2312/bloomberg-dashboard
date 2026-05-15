@@ -91,12 +91,18 @@ export function getMockNews(): NewsItem[] {
 type CalendarBase = Omit<EconomicEvent, 'date'> & { daysFromNow: number }
 
 const CALENDAR_BASE: CalendarBase[] = [
-  { id: '1', daysFromNow: 0, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'CPI m/m',                    importance: 'high',   forecast: '0.3%',  previous: '0.4%' },
-  { id: '2', daysFromNow: 0, time: '16:00', country: 'USA', flag: '🇺🇸', event: 'Nastroje konsumentów (Mich.)', importance: 'medium', forecast: '79.0',  previous: '77.2', actual: '78.8' },
-  { id: '3', daysFromNow: 1, time: '10:00', country: 'EUZ', flag: '🇪🇺', event: 'Decyzja EBC ws. stóp proc.',  importance: 'high',   forecast: '4.50%', previous: '4.50%' },
-  { id: '4', daysFromNow: 1, time: '08:00', country: 'POL', flag: '🇵🇱', event: 'CPI r/r (Polska)',             importance: 'medium', forecast: '3.2%',  previous: '2.8%' },
-  { id: '5', daysFromNow: 2, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'Wnioski o zasiłek (tyg.)',     importance: 'low',    forecast: '215K',  previous: '212K' },
-  { id: '6', daysFromNow: 3, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'NFP — zmiana zatrudnienia',    importance: 'high',   forecast: '185K',  previous: '275K' },
+  { id: '1',  daysFromNow: 0, time: '08:30', country: 'POL', flag: '🇵🇱', event: 'Sprzedaż detaliczna (Polska)', importance: 'medium', forecast: '4.1%',  previous: '3.8%' },
+  { id: '2',  daysFromNow: 0, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'CPI m/m',                      importance: 'high',   forecast: '0.3%',  previous: '0.4%' },
+  { id: '3',  daysFromNow: 0, time: '16:00', country: 'USA', flag: '🇺🇸', event: 'Nastroje konsumentów (Mich.)', importance: 'medium', forecast: '79.0',  previous: '77.2', actual: '78.8' },
+  { id: '4',  daysFromNow: 1, time: '08:00', country: 'POL', flag: '🇵🇱', event: 'CPI r/r (Polska)',             importance: 'medium', forecast: '3.2%',  previous: '2.8%' },
+  { id: '5',  daysFromNow: 1, time: '10:00', country: 'EUZ', flag: '🇪🇺', event: 'Decyzja EBC ws. stóp proc.',  importance: 'high',   forecast: '4.50%', previous: '4.50%' },
+  { id: '6',  daysFromNow: 1, time: '13:30', country: 'GBR', flag: '🇬🇧', event: 'PKB m/m (Wielka Brytania)',   importance: 'medium', forecast: '0.1%',  previous: '0.3%' },
+  { id: '7',  daysFromNow: 2, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'Wnioski o zasiłek (tyg.)',     importance: 'low',    forecast: '215K',  previous: '212K' },
+  { id: '8',  daysFromNow: 2, time: '16:30', country: 'USA', flag: '🇺🇸', event: 'Zapasy ropy EIA',              importance: 'medium', forecast: '-1.2M', previous: '+0.8M' },
+  { id: '9',  daysFromNow: 3, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'NFP — zmiana zatrudnienia',    importance: 'high',   forecast: '185K',  previous: '275K' },
+  { id: '10', daysFromNow: 3, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'Stopa bezrobocia USA',         importance: 'high',   forecast: '3.9%',  previous: '4.0%' },
+  { id: '11', daysFromNow: 4, time: '09:00', country: 'DEU', flag: '🇩🇪', event: 'Inflacja HICP (Niemcy) r/r',  importance: 'medium', forecast: '2.8%',  previous: '2.6%' },
+  { id: '12', daysFromNow: 5, time: '14:30', country: 'USA', flag: '🇺🇸', event: 'Sprzedaż detaliczna m/m',     importance: 'high',   forecast: '0.4%',  previous: '-0.1%' },
 ]
 
 export function getMockCalendar(): EconomicEvent[] {
