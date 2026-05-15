@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const symbols = symbolsParam.split(',').map(s => {
     const [symbol, type] = s.split(':')
-    return { symbol, type: (type ?? 'crypto') as 'stock' | 'crypto' }
+    return { symbol, type: (type === 'stock' ? 'stock' : 'crypto') as 'stock' | 'crypto' }
   })
 
   try {

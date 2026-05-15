@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const symbol = searchParams.get('symbol') ?? 'BTC'
-  const type = (searchParams.get('type') ?? 'crypto') as 'stock' | 'crypto'
+  const type = (searchParams.get('type') === 'stock' ? 'stock' : 'crypto') as 'stock' | 'crypto'
   const days = parseInt(searchParams.get('days') ?? '90', 10)
 
   try {
