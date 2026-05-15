@@ -42,7 +42,7 @@ export default function MarketOverview() {
           </div>
           {indices.length === 0 ? <SkeletonBlock rows={8} cols={2} /> : indices.map(idx => {
             const pos = idx.pct >= 0
-            const decimals = idx.value < 10 ? 4 : idx.value < 1000 ? 2 : 2
+            const decimals = idx.value < 10 ? 4 : idx.value < 1000 ? 2 : 0
             return (
               <div key={idx.symbol} className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
                 <span className="text-[#888]">{idx.symbol}</span>
