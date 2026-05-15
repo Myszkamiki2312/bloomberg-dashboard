@@ -28,7 +28,9 @@ const categories = [...new Set(SHORTCUTS.map(s => s.category))]
 export default function KeyboardShortcuts({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === '?') onClose()
+      // Only close on Escape — '?' is handled by the page-level toggle
+      // to avoid a double setState conflict (toggle + close race)
+      if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
