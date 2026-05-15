@@ -25,7 +25,7 @@ Finansowy dashboard inspirowany Bloomberg Terminal — Next.js 14, TypeScript, T
 | Moduł | Opis |
 |-------|------|
 | **Watchlista** | Lista obserwowanych aktywów (akcje + krypto), edytowalna, flash przy zmianie ceny |
-| **Wykres świecowy** | TradingView Lightweight Charts, timeframe 1M/3M/6M, volume bar |
+| **Wykres** | TradingView Lightweight Charts (Area), timeframe 1M/3M/6M/1Y, OHLC nagłówek |
 | **Ticker tape** | Scrollujący pasek cen u góry ekranu, auto-odświeżanie 30 s |
 | **Wiadomości** | Panel z newsami z Yahoo Finance RSS + fallback mock |
 | **Pasek newsów** | Scrollujące nagłówki na dole ekranu |
@@ -101,15 +101,16 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 **Typ dostępu:** Bezpłatny (bez klucza lub klucz Demo)  
 **Co pobieramy:**
 - Bieżące ceny, zmiana 24h, wolumen, kapitalizacja rynkowa
-- Dane OHLCV (świece) dla wykresu — do 90 dni historii
-- Endpoint: `/api/v3/simple/price`, `/api/v3/coins/{id}/ohlc`
+- Dane OHLCV dla wykresu — do 365 dni historii
+- Globalne dane rynkowe (dominacja BTC, całkowita kapitalizacja)
+- Endpoint: `/api/v3/simple/price`, `/api/v3/coins/{id}/ohlc`, `/api/v3/global`
 
 **Limity bezpłatne:**
 - Bez klucza: ~10–30 zapytań/min (publiczny limit)
 - Klucz Demo (bezpłatny): 30 zapytań/min, brak paginacji danych historycznych
 - Polecane: zarejestrować klucz Demo pod adresem powyżej
 
-**Obsługiwane symbole:** BTC, ETH, SOL, XRP, BNB, ADA, AVAX, DOT, MATIC, LINK, DOGE i dziesiątki innych
+**Obsługiwane symbole (30+):** BTC, ETH, SOL, XRP, BNB, ADA, AVAX, DOT, MATIC/POL, LINK, DOGE, SHIB, TON, TRX, LTC, BCH, ATOM, UNI, NEAR, OP, ARB, SUI, APT, PEPE i inne
 
 ---
 
@@ -145,30 +146,17 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 
 ---
 
-### Wiadomości — Yahoo Finance RSS
+### Wiadomości — RSS (bez klucza)
 
-**Adres:** `https://finance.yahoo.com/rss/topstories`  
-**Typ dostępu:** Publiczny feed RSS, brak klucza  
-**Co pobieramy:** Nagłówki wiadomości finansowych, link, data publikacji  
+**Źródła (priorytet: PL → EN):**
+- Bankier.pl — wiadomości ogólne + giełdowe
+- Money.pl — wiadomości gospodarcze
+- WSJ Markets — Wall Street Journal
+- Yahoo Finance — top stories + krypto
+
+**Typ dostępu:** Publiczne feedy RSS, brak klucza  
 **Odświeżanie:** Co 5 minut  
-**Limit:** Brak formalnego limitu (publiczny RSS)
-
-Używany także feed per-symbol: `https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}`
-
----
-
-### Wiadomości (opcjonalnie) — NewsAPI
-
-**Strona:** https://newsapi.org  
-**Typ dostępu:** Bezpłatny klucz (plan Developer)  
-**Co pobieramy:** Artykuły z setek źródeł finansowych
-
-**Limity bezpłatne:**
-- 100 zapytań/dzień
-- Dane opóźnione o ok. 24h (plan Developer)
-- Dostęp tylko z `localhost` (produkcja wymaga planu płatnego)
-
-**Rejestracja:** https://newsapi.org/register
+**Limit:** Brak formalnego limitu
 
 ---
 
@@ -190,15 +178,22 @@ Używany także feed per-symbol: `https://feeds.finance.yahoo.com/rss/2.0/headli
 
 ---
 
+### Dane live (bez klucza)
+
+| Dane | Źródło | Odśw. |
+|------|--------|-------|
+| Indeksy globalne (SPX, NDX, VIX, DXY, GOLD, OIL…) | Yahoo Finance | 60 s |
+| Indeks Strachu & Chciwości | Alternative.me (bezpłatny) | 1 h |
+| BTC dominacja + Total Market Cap | CoinGecko `/global` | 5 min |
+
 ### Dane statyczne / mock
 
 Następujące dane są zawsze mock (brak darmowego API):
 
 | Dane | Źródło | Uwagi |
 |------|--------|-------|
-| Indeksy globalne (SPX, NDX, VIX, DXY…) | Mock z drobnym driftem | Wymagają płatnych subskrypcji (Refinitiv, Bloomberg) |
-| Kalendarz ekonomiczny | Mock — dane przykładowe | Darmowe API (Investing.com, Trading Economics) wymagają rejestracji lub są nieoficjalne |
-| Indeks Strachu & Chciwości | Mock (wartość 65) | Oficjalny: CNN Business (brak publicznego API) |
+| Kalendarz ekonomiczny | Mock — daty dynamiczne | Darmowe API (Investing.com, Trading Economics) wymagają rejestracji |
+| RSI/trend dla akcji w screenerze | Mock OHLCV | Fetchowanie real OHLCV dla 4 symboli jednocześnie przekroczyłoby limity |
 
 ---
 
@@ -214,7 +209,7 @@ cp .env.example .env.local
 |---------|---------------|-----------|
 | `COINGECKO_API_KEY` | https://www.coingecko.com/en/api | Nie (działa bez klucza) |
 | `FINNHUB_KEY` | https://finnhub.io/register | Zalecane dla akcji |
-| `NEWS_API_KEY` | https://newsapi.org/register | Nie (RSS działa bez) |
+| `GROQ_API_KEY` | https://console.groq.com | Zalecane dla AI (darmowy) |
 | `ANTHROPIC_API_KEY` | https://console.anthropic.com | Nie (tryb mock) |
 | `OPENAI_API_KEY` | https://platform.openai.com | Nie (tryb mock) |
 | `NEXT_PUBLIC_DEMO_MODE` | — | Nie (`true` = wymuś demo) |
