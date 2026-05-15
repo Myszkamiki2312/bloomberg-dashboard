@@ -77,7 +77,7 @@ function validateSummary(obj: any): obj is MarketSummary {
     obj != null &&
     typeof obj.summary === 'string' && obj.summary.length > 0 &&
     validSentiments.includes(obj.sentiment as string) &&
-    typeof obj.sentimentScore === 'number' &&
+    typeof obj.sentimentScore === 'number' && isFinite(obj.sentimentScore) &&
     Array.isArray(obj.keyPoints) &&
     Array.isArray(obj.sectors)
   )
