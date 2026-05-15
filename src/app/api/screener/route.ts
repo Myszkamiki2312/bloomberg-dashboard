@@ -50,10 +50,11 @@ export async function GET() {
     SCREENER_SYMBOLS.map(({ symbol, type }) => getRealOHLC(symbol, type))
   )
 
-  const screener: ScreenerItem[] = SCREENER_SYMBOLS.map(({ symbol, type }, i) => {
+  const screener = SCREENER_SYMBOLS.map(({ symbol, type }, i) => {
     const live = livePrices.find(p => p.symbol === symbol)
     const mock = mockPrices.find(p => p.symbol === symbol)
-    const asset = live ?? mock!
+    const asset = live ?? mock
+    if (!asset) return null
 
     const closes = ohlcvResults[i].status === 'fulfilled'
       ? ohlcvResults[i].value
@@ -72,7 +73,7 @@ export async function GET() {
     }
   })
 
-  return NextResponse.json(screener, {
+  return NextResponse.json(screener.filter(Boolean) as ScreenerItem[], {
     headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
   })
 }
