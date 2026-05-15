@@ -35,6 +35,7 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
   const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g)
 
   for (const match of itemMatches) {
+    if (items.length >= 12) break
     const block = match[1]
 
     const title =
@@ -79,7 +80,7 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
     })
   }
 
-  return items.slice(0, 12)
+  return items
 }
 
 export async function GET() {
