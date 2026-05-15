@@ -25,7 +25,7 @@ export default function EconomicCalendar() {
   }, {})
 
   return (
-    <TerminalCard title="Kalendarz ekonomiczny" badge="MOCK" badgeColor="muted" className="h-full">
+    <TerminalCard title="Kalendarz ekonomiczny" badge="DEMO" badgeColor="muted" className="h-full">
       <div className="flex flex-col divide-y divide-[#1c1c1c] overflow-auto">
         {Object.entries(grouped).map(([date, dayEvents]) => (
           <div key={date}>
