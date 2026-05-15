@@ -43,7 +43,7 @@ export default function AIMarketSummary() {
             <div className="h-1.5 bg-[#111] rounded-full overflow-hidden">
               <div
                 className={clsx('h-full transition-all', cfg.barColor)}
-                style={{ width: `${data.sentimentScore}%` }}
+                style={{ width: `${Math.max(0, Math.min(100, data.sentimentScore))}%` }}
               />
             </div>
           </div>
