@@ -39,7 +39,7 @@ export default function EconomicCalendar() {
         </div>
       ) : events.length === 0 ? (
         <div className="p-3 text-[#555] text-[11px]">Brak wydarzeń ekonomicznych.</div>
-      ) : null}
+      ) : (
       <div className="flex flex-col divide-y divide-[#1c1c1c]">
         {sortedDays.map(([date, dayEvents]) => (
           <div key={date}>
@@ -97,6 +97,7 @@ export default function EconomicCalendar() {
           </div>
         ))}
       </div>
+      )}
     </TerminalCard>
   )
 }
