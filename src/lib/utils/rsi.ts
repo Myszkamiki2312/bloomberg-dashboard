@@ -13,6 +13,7 @@ export function calculateRSI(prices: number[], period = 14): number {
     avgLoss = (avgLoss * (period - 1) + losses[i]) / period
   }
 
+  if (avgLoss === 0 && avgGain === 0) return 50
   if (avgLoss === 0) return 100
   const rs = avgGain / avgLoss
   return Math.round(100 - 100 / (1 + rs))
