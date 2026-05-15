@@ -30,6 +30,7 @@ const TIMEFRAMES = [
   { label: '1M', days: 30 },
   { label: '3M', days: 90 },
   { label: '6M', days: 180 },
+  { label: '1Y', days: 365 },
 ]
 
 export default function CandlestickChart() {
@@ -205,7 +206,7 @@ export default function CandlestickChart() {
           <span className="text-[#333]">│</span>
           <span className="text-[#444]">O <span className="text-[#666]">{formatPrice(lastBar.open)}</span></span>
           <span className="text-[#444]">H <span className="text-[#00ff41]">{formatPrice(lastBar.high)}</span></span>
-          <span className="text-[#444]">D <span className="text-[#ff0040]">{formatPrice(lastBar.low)}</span></span>
+          <span className="text-[#444]">L <span className="text-[#ff0040]">{formatPrice(lastBar.low)}</span></span>
         </div>
       )}
 

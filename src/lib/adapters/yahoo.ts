@@ -68,7 +68,7 @@ export async function fetchYahooQuote(symbol: string): Promise<AssetPrice | null
 
 export async function fetchYahooOHLC(symbol: string, days = 90): Promise<OHLCBar[]> {
   try {
-    const range = days <= 30 ? '1mo' : days <= 90 ? '3mo' : '6mo'
+    const range = days <= 30 ? '1mo' : days <= 90 ? '3mo' : days <= 180 ? '6mo' : '1y'
     const resolved = await resolveYahooTicker(symbol, `interval=1d&range=${range}`)
     if (!resolved) return []
 
