@@ -9,7 +9,7 @@ function buildPrompt(): string {
   const date = new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })
   return (
     `Jesteś analitykiem rynku finansowego. Data: ${date}. ` +
-    'Napisz krótkie podsumowanie aktualnych nastrojów rynkowych po polsku. ' +
+    'Na podstawie swojej wiedzy o aktualnych warunkach rynkowych, napisz krótkie podsumowanie nastrojów rynkowych po polsku. ' +
     'Odpowiedz WYŁĄCZNIE jako obiekt JSON (bez markdown, bez komentarzy): ' +
     '{"sentiment":"bullish","sentimentScore":63,"summary":"2-3 zdania po polsku.",' +
     '"keyPoints":["punkt 1","punkt 2","punkt 3"],' +
@@ -17,8 +17,8 @@ function buildPrompt(): string {
     '{"name":"Energia","performance":0.3},{"name":"Finanse","performance":0.7},' +
     '{"name":"Zdrowie","performance":-0.2},{"name":"Przemysł","performance":0.4}]}. ' +
     'sentiment: bullish/bearish/neutral. sentimentScore: liczba 0-100. ' +
-    'performance: liczba dziesiętna (procent, np. 1.5 lub -0.8). ' +
-    'Uwzględnij: krypto (BTC ok. 79k USD po korekcie), akcje US (S&P500 blisko ATH), Europa, surowce (złoto > 3200 USD).'
+    'performance: liczba dziesiętna (procent dzienny, np. 1.5 lub -0.8). ' +
+    'Uwzględnij: krypto (BTC, ETH), akcje US (S&P500, NASDAQ, główne spółki tech), Europa, surowce (złoto, ropa).'
   )
 }
 
