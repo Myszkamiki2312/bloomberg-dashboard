@@ -13,12 +13,13 @@ interface FeedConfig {
 
 // Polskie źródła pierwsze — angielskie jako uzupełnienie
 const RSS_FEEDS: FeedConfig[] = [
-  { url: 'https://www.bankier.pl/rss/wiadomosci.xml',                    source: 'Bankier.pl',         lang: 'pl' },
-  { url: 'https://www.money.pl/rss/wiadomosci_gospodarcze.xml',          source: 'Money.pl',           lang: 'pl' },
-  { url: 'https://businessinsider.com.pl/feed',                          source: 'Business Insider PL', lang: 'pl' },
-  { url: 'https://finance.yahoo.com/rss/topstories',                     source: 'Yahoo Finance',       lang: 'en' },
+  { url: 'https://www.bankier.pl/rss/wiadomosci.xml',          source: 'Bankier.pl',     lang: 'pl' },
+  { url: 'https://www.bankier.pl/rss/gielda.xml',              source: 'Bankier Giełda', lang: 'pl' },
+  { url: 'https://www.money.pl/rss/wiadomosci_gospodarcze.xml',source: 'Money.pl',       lang: 'pl' },
+  { url: 'https://feeds.a.dj.com/rss/RSSMarketsMain.xml',      source: 'WSJ Markets',    lang: 'en' },
+  { url: 'https://finance.yahoo.com/rss/topstories',            source: 'Yahoo Finance',  lang: 'en' },
   { url: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=BTC-USD,ETH-USD&region=US&lang=en-US',
-                                                                          source: 'Yahoo Finance Crypto', lang: 'en' },
+                                                                source: 'Yahoo Crypto',   lang: 'en' },
 ]
 
 async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
