@@ -56,7 +56,7 @@ export async function fetchStockOHLC(symbol: string, days = 90): Promise<OHLCBar
     const high  = data.h?.[i] as number | undefined
     const low   = data.l?.[i] as number | undefined
     const close = data.c?.[i] as number | undefined
-    if (open != null && high != null && low != null && close != null) {
+    if (open != null && high != null && low != null && close != null && isFinite(ts)) {
       acc.push({
         time: new Date(ts * 1000).toISOString().split('T')[0],
         open, high, low, close,

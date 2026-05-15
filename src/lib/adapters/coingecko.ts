@@ -96,11 +96,13 @@ export async function fetchCryptoOHLC(symbol: string, days = 30): Promise<OHLCBa
   if (!res.ok) throw new Error(`CoinGecko OHLC ${res.status}`)
   const data: [number, number, number, number, number][] = await res.json()
 
-  return data.map(([ts, open, high, low, close]) => ({
-    time: new Date(ts).toISOString().split('T')[0],
-    open,
-    high,
-    low,
-    close,
-  }))
+  return data
+    .filter(([ts]) => typeof ts === 'number' && isFinite(ts))
+    .map(([ts, open, high, low, close]) => ({
+      time: new Date(ts).toISOString().split('T')[0],
+      open,
+      high,
+      low,
+      close,
+    }))
 }

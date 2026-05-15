@@ -78,15 +78,20 @@ export async function fetchYahooOHLC(symbol: string, days = 90): Promise<OHLCBar
     const quote = result.indicators?.quote?.[0] ?? {}
 
     return timestamps
-      .map((ts, i) => ({
-        time: new Date(ts * 1000).toISOString().split('T')[0],
-        open:   quote.open?.[i]   ?? 0,
-        high:   quote.high?.[i]   ?? 0,
-        low:    quote.low?.[i]    ?? 0,
-        close:  quote.close?.[i]  ?? 0,
-        volume: quote.volume?.[i] ?? 0,
-      }))
-      .filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0)
+      .map((ts, i) => {
+        // Guard against NaN/invalid timestamps from Yahoo Finance
+        const ms = typeof ts === 'number' && isFinite(ts) ? ts * 1000 : NaN
+        if (!isFinite(ms)) return null
+        return {
+          time: new Date(ms).toISOString().split('T')[0],
+          open:   quote.open?.[i]   ?? 0,
+          high:   quote.high?.[i]   ?? 0,
+          low:    quote.low?.[i]    ?? 0,
+          close:  quote.close?.[i]  ?? 0,
+          volume: quote.volume?.[i] ?? 0,
+        }
+      })
+      .filter((b): b is NonNullable<typeof b> => b !== null && b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0)
   } catch {
     return []
   }
