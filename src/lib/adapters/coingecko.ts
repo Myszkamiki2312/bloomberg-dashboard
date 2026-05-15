@@ -99,9 +99,10 @@ export async function fetchCryptoOHLC(symbol: string, days = 30): Promise<OHLCBa
   })
 
   if (!res.ok) throw new Error(`CoinGecko OHLC ${res.status}`)
-  const data: [number, number, number, number, number][] = await res.json()
+  const data: unknown = await res.json()
+  if (!Array.isArray(data)) throw new Error('CoinGecko OHLC: unexpected response format')
 
-  return data
+  return (data as [number, number, number, number, number][])
     .filter(([ts]) => typeof ts === 'number' && isFinite(ts))
     .map(([ts, open, high, low, close]) => ({
       time: new Date(ts).toISOString().split('T')[0],
