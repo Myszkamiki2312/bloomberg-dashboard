@@ -3,12 +3,18 @@ import { useState, useRef, useEffect } from 'react'
 import useSWR from 'swr'
 import { clsx } from 'clsx'
 import { useStore } from '@/lib/store/useStore'
-import { formatPrice, formatPercent, formatVolume } from '@/lib/utils/formatters'
-import type { AssetPrice } from '@/types'
+import { formatPrice, formatVolume } from '@/lib/utils/formatters'
+import type { AssetPrice, WatchlistEntry } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { SkeletonBlock } from '@/components/ui/Skeleton'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
+
+function fmtPnl(val: number): string {
+  const abs = Math.abs(val)
+  if (abs >= 1000) return `${(val / 1000).toFixed(1)}k`
+  return val.toFixed(2)
+}
 
 export default function Watchlist() {
   const { watchlist, selectedSymbol, setSelectedSymbol, removeFromWatchlist, checkAlerts } = useStore()
@@ -17,8 +23,8 @@ export default function Watchlist() {
   const prevPrices = useRef<Record<string, number>>({})
   const [flashMap, setFlashMap] = useState<Record<string, 'up' | 'down' | null>>({})
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [editingSymbol, setEditingSymbol] = useState<string | null>(null)
 
-  // Clear pending flash timer on unmount to avoid setState on unmounted component
   useEffect(() => () => { if (flashTimeout.current) clearTimeout(flashTimeout.current) }, [])
 
   const { data: prices = [], isLoading: pricesLoading, error: pricesError } = useSWR<AssetPrice[]>(
@@ -48,6 +54,17 @@ export default function Watchlist() {
   const priceMap = Object.fromEntries(prices.map(p => [p.symbol, p]))
   const maxVol = Math.max(...prices.map(p => p.volume24h), 1)
 
+  // Portfolio totals
+  const portfolioEntries = watchlist.filter(w => w.quantity && w.quantity > 0 && w.avgPrice && w.avgPrice > 0)
+  const totalValue  = portfolioEntries.reduce((sum, w) => {
+    const p = priceMap[w.symbol]
+    return sum + (p ? p.price * w.quantity! : 0)
+  }, 0)
+  const totalCost   = portfolioEntries.reduce((sum, w) => sum + w.avgPrice! * w.quantity!, 0)
+  const totalPnl    = totalValue - totalCost
+  const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
+  const hasPortfolio = portfolioEntries.length > 0
+
   return (
     <TerminalCard
       title="Watchlista"
@@ -76,6 +93,9 @@ export default function Watchlist() {
           const isSelected = selectedSymbol === entry.symbol
           const flash = flashMap[entry.symbol]
           const volPct = p ? (p.volume24h / maxVol) * 100 : 0
+          const hasPos = !!(entry.quantity && entry.quantity > 0 && entry.avgPrice && entry.avgPrice > 0)
+          const pnl    = hasPos && p ? (p.price - entry.avgPrice!) * entry.quantity! : null
+          const pnlPct = hasPos && entry.avgPrice! > 0 ? ((p?.price ?? 0) - entry.avgPrice!) / entry.avgPrice! * 100 : null
 
           return (
             <div key={entry.symbol}>
@@ -110,25 +130,45 @@ export default function Watchlist() {
                   <div className={clsx('num font-bold', flash === 'up' ? 'text-[#00ff41]' : flash === 'down' ? 'text-[#ff0040]' : 'text-[#c8c8c8]')}>
                     {p ? formatPrice(p.price) : '—'}
                   </div>
-                  {p && (
+                  {hasPos && pnl !== null ? (
+                    <div className={clsx('text-[9px] num font-bold', pnl >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {pnl >= 0 ? '+' : ''}{fmtPnl(pnl)}
+                    </div>
+                  ) : p ? (
                     <div className="text-[9px] text-[#444] num">{formatVolume(p.volume24h)}</div>
-                  )}
+                  ) : null}
                 </div>
 
-                {/* Change % + delete */}
+                {/* Change % / P&L% + actions */}
                 <div className="text-right flex flex-col items-end gap-0.5">
-                  <span className={clsx('num font-bold', p && p.changePercent24h >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                    {p ? `${p.changePercent24h >= 0 ? '+' : ''}${p.changePercent24h.toFixed(2)}%` : '—'}
-                  </span>
-                  <button
-                    onClick={e => { e.stopPropagation(); removeFromWatchlist(entry.symbol) }}
-                    title={`Usuń ${entry.symbol}`}
-                    className="text-[10px] text-[#333] hover:text-[#ff0040] transition-colors leading-none px-0.5"
-                  >
-                    ✕
-                  </button>
+                  {hasPos && pnlPct !== null ? (
+                    <span className={clsx('num font-bold', pnlPct >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%
+                    </span>
+                  ) : (
+                    <span className={clsx('num font-bold', p && p.changePercent24h >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {p ? `${p.changePercent24h >= 0 ? '+' : ''}${p.changePercent24h.toFixed(2)}%` : '—'}
+                    </span>
+                  )}
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={e => { e.stopPropagation(); setEditingSymbol(s => s === entry.symbol ? null : entry.symbol) }}
+                      title="Ustaw pozycję"
+                      className="text-[10px] text-[#555] hover:text-[#ffaa00] transition-colors leading-none px-0.5"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); removeFromWatchlist(entry.symbol) }}
+                      title={`Usuń ${entry.symbol}`}
+                      className="text-[10px] text-[#333] hover:text-[#ff0040] transition-colors leading-none px-0.5"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
+
               {/* Volume bar */}
               {p && (
                 <div className="bar-track mx-2 mb-px">
@@ -138,15 +178,132 @@ export default function Watchlist() {
                   />
                 </div>
               )}
+
+              {/* Inline position editor */}
+              {editingSymbol === entry.symbol && (
+                <PositionEditor
+                  entry={entry}
+                  currentPrice={p?.price}
+                  onClose={() => setEditingSymbol(null)}
+                />
+              )}
             </div>
           )
         })}
 
         <AddSymbol />
       </div>
+
+      {/* Portfolio summary */}
+      {hasPortfolio && totalCost > 0 && (
+        <div className="border-t border-[#1c1c1c] px-2 py-2 bg-[#050505] mt-auto">
+          <div className="flex items-center justify-between text-[10px] mb-1">
+            <span className="text-[#555] uppercase tracking-widest text-[9px]">Portfel</span>
+            <span className="num text-[#c8c8c8] font-bold">{formatPrice(totalValue)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-[#555]">Koszt: <span className="text-[#666] num">{formatPrice(totalCost)}</span></span>
+            <span className={clsx('num font-bold', totalPnl >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+              {totalPnl >= 0 ? '+' : ''}{fmtPnl(totalPnl)} ({totalPnlPct >= 0 ? '+' : ''}{totalPnlPct.toFixed(2)}%)
+            </span>
+          </div>
+          <div className="bar-track mt-1">
+            <div
+              className={totalPnl >= 0 ? 'bar-fill-pos' : 'bar-fill-neg'}
+              style={{ width: `${Math.min(Math.abs(totalPnlPct) * 2, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
       </>
       )}
     </TerminalCard>
+  )
+}
+
+function PositionEditor({
+  entry,
+  currentPrice,
+  onClose,
+}: {
+  entry: WatchlistEntry
+  currentPrice?: number
+  onClose: () => void
+}) {
+  const updateWatchlistEntry = useStore(s => s.updateWatchlistEntry)
+  const [qty, setQty]   = useState(entry.quantity?.toString() ?? '')
+  const [avg, setAvg]   = useState(entry.avgPrice?.toString() ?? (currentPrice?.toString() ?? ''))
+
+  const handleSave = () => {
+    const quantity = parseFloat(qty)
+    const avgPrice = parseFloat(avg)
+    if (isNaN(quantity) || quantity < 0) return
+    if (isNaN(avgPrice) || avgPrice <= 0) return
+    updateWatchlistEntry(entry.symbol, { quantity, avgPrice })
+    onClose()
+  }
+
+  const handleClear = () => {
+    updateWatchlistEntry(entry.symbol, { quantity: 0, avgPrice: 0 })
+    onClose()
+  }
+
+  return (
+    <div className="mx-2 mb-1 border border-[#1c1c1c] bg-[#050505] p-2 flex flex-col gap-1.5">
+      <div className="text-[9px] text-[#ffaa00] uppercase tracking-widest">
+        Pozycja — {entry.symbol}
+      </div>
+      <div className="flex gap-1.5">
+        <div className="flex-1">
+          <div className="text-[9px] text-[#555] mb-0.5">Ilość</div>
+          <input
+            value={qty}
+            onChange={e => setQty(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+            type="number"
+            min="0"
+            step="any"
+            placeholder="0"
+            className="w-full bg-black border border-[#2a2a2a] focus:border-[#ffaa00] px-1.5 py-0.5 text-[10px] text-[#c8c8c8] outline-none"
+            autoFocus
+          />
+        </div>
+        <div className="flex-1">
+          <div className="text-[9px] text-[#555] mb-0.5">Śr. cena</div>
+          <input
+            value={avg}
+            onChange={e => setAvg(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+            type="number"
+            min="0"
+            step="any"
+            placeholder="0"
+            className="w-full bg-black border border-[#2a2a2a] focus:border-[#ffaa00] px-1.5 py-0.5 text-[10px] text-[#c8c8c8] outline-none"
+          />
+        </div>
+      </div>
+      {qty && avg && !isNaN(parseFloat(qty)) && !isNaN(parseFloat(avg)) && currentPrice && (
+        <div className="text-[9px] text-[#555]">
+          Wartość: <span className="text-[#c8c8c8] num">{formatPrice(parseFloat(qty) * currentPrice)}</span>
+          {' · '}
+          P&L:{' '}
+          <span className={clsx('num font-bold', (currentPrice - parseFloat(avg)) >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+            {fmtPnl((currentPrice - parseFloat(avg)) * parseFloat(qty))}
+          </span>
+        </div>
+      )}
+      <div className="flex gap-1">
+        <button onClick={handleSave} className="flex-1 py-0.5 text-[10px] border border-[#ffaa00] text-[#ffaa00] hover:bg-[#ffaa00] hover:text-black transition-colors">
+          ZAPISZ
+        </button>
+        <button onClick={handleClear} className="py-0.5 px-2 text-[10px] border border-[#333] text-[#555] hover:border-[#ff0040] hover:text-[#ff0040] transition-colors">
+          WYCZYŚĆ
+        </button>
+        <button onClick={onClose} className="py-0.5 px-2 text-[10px] border border-[#222] text-[#444] hover:border-[#555] transition-colors">
+          ✕
+        </button>
+      </div>
+    </div>
   )
 }
 

@@ -79,6 +79,8 @@ export interface WatchlistEntry {
   name: string
   type: 'stock' | 'crypto'
   coinId?: string
+  quantity?: number
+  avgPrice?: number
 }
 
 export interface MarketIndex {

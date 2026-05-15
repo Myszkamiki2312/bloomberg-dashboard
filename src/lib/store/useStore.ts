@@ -23,6 +23,7 @@ interface AppStore {
   setSelectedSymbol: (symbol: string, type: 'stock' | 'crypto') => void
   addToWatchlist: (entry: WatchlistEntry) => void
   removeFromWatchlist: (symbol: string) => void
+  updateWatchlistEntry: (symbol: string, patch: Pick<WatchlistEntry, 'quantity' | 'avgPrice'>) => void
   addAlert: (alert: Omit<PriceAlert, 'id' | 'createdAt' | 'triggered'>) => void
   removeAlert: (id: string) => void
   triggerAlert: (id: string) => void
@@ -48,6 +49,13 @@ export const useStore = create<AppStore>()(
 
       removeFromWatchlist: symbol =>
         set(s => ({ watchlist: s.watchlist.filter(w => w.symbol !== symbol) })),
+
+      updateWatchlistEntry: (symbol, patch) =>
+        set(s => ({
+          watchlist: s.watchlist.map(w =>
+            w.symbol === symbol ? { ...w, ...patch } : w
+          ),
+        })),
 
       addAlert: alert =>
         set(s => ({
