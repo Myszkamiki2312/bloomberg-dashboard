@@ -15,7 +15,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['finance.yahoo.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'finance.yahoo.com' },
+    ],
   },
   async headers() {
     return [
