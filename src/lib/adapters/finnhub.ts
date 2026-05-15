@@ -28,7 +28,7 @@ export async function fetchStockQuote(symbol: string): Promise<AssetPrice | null
     price: quote.c,
     change24h: quote.d ?? 0,
     changePercent24h: quote.dp ?? 0,
-    volume24h: 0,
+    volume24h: quote.v ?? 0,
     marketCap: profile.marketCapitalization ? profile.marketCapitalization * 1e6 : 0,
     type: 'stock',
     lastUpdated: new Date().toISOString(),
