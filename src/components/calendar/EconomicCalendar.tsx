@@ -47,7 +47,7 @@ export default function EconomicCalendar() {
               {formatDate(date)}
             </div>
             {dayEvents.map(event => {
-              const imp = IMPORTANCE_CONFIG[event.importance]
+              const imp = IMPORTANCE_CONFIG[event.importance] ?? IMPORTANCE_CONFIG.low
               const hasActual = event.actual != null
               return (
                 <div key={event.id} className="px-3 py-1.5 hover:bg-[#111] transition-colors">
