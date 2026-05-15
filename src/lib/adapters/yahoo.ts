@@ -16,7 +16,7 @@ async function fetchYahooChartRaw(ticker: string, params: string): Promise<any> 
   return json?.chart?.result?.[0] ?? null
 }
 
-// Resolve correct Yahoo ticker — tries base symbol, then common exchange suffixes
+// Resolve correct Yahoo ticker — tries base symbol first, then all exchange suffixes in parallel
 async function resolveYahooTicker(symbol: string, params: string): Promise<{ result: any; ticker: string } | null> {
   // Try as-is first (works for US stocks and symbols already with suffix e.g. "PKN.WA")
   const base = await fetchYahooChartRaw(symbol, params)
@@ -24,16 +24,23 @@ async function resolveYahooTicker(symbol: string, params: string): Promise<{ res
     return { result: base, ticker: symbol }
   }
 
-  // Try exchange suffixes — stop at first hit
-  for (const suffix of EXCHANGE_SUFFIXES) {
-    if (symbol.includes('.')) break // already has suffix, don't double-append
-    const result = await fetchYahooChartRaw(symbol + suffix, params)
-    if (result && (result.meta?.regularMarketPrice ?? 0) > 0) {
-      return { result, ticker: symbol + suffix }
-    }
-  }
+  // Don't try suffixes if symbol already contains a dot (already has an exchange suffix)
+  if (symbol.includes('.')) return null
 
-  return null
+  // Try all exchange suffixes in parallel — first valid response wins
+  try {
+    return await Promise.any(
+      EXCHANGE_SUFFIXES.map(async suffix => {
+        const result = await fetchYahooChartRaw(symbol + suffix, params)
+        if (result && (result.meta?.regularMarketPrice ?? 0) > 0) {
+          return { result, ticker: symbol + suffix }
+        }
+        throw new Error('no data')
+      })
+    )
+  } catch {
+    return null
+  }
 }
 
 export async function fetchYahooQuote(symbol: string): Promise<AssetPrice | null> {
