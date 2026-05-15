@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { clsx } from 'clsx'
 import type { ScreenerItem } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
-import { formatPrice, formatPercent, formatVolume } from '@/lib/utils/formatters'
+import { formatPrice, formatVolume } from '@/lib/utils/formatters'
 import { useStore } from '@/lib/store/useStore'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())

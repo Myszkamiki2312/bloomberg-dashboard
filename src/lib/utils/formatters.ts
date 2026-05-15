@@ -18,6 +18,7 @@ export function formatCurrency(value: number, currency = 'USD'): string {
 }
 
 export function formatPercent(value: number): string {
+  if (!isFinite(value)) return '—'
   const sign = value >= 0 ? '+' : ''
   return `${sign}${value.toFixed(2)}%`
 }
