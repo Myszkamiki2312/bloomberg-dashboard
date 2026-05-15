@@ -25,7 +25,9 @@ export default function EconomicCalendar() {
     acc[ev.date].push(ev)
     return acc
   }, {})
-  Object.values(grouped).forEach(day => day.sort((a, b) => a.time.localeCompare(b.time)))
+  // Sort days chronologically (ISO date strings sort correctly as strings)
+  const sortedDays = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b))
+  sortedDays.forEach(([, day]) => day.sort((a, b) => a.time.localeCompare(b.time)))
 
   return (
     <TerminalCard title="Kalendarz ekonomiczny" badge="DEMO" badgeColor="muted" className="h-full">
@@ -39,7 +41,7 @@ export default function EconomicCalendar() {
         <div className="p-3 text-[#555] text-[11px]">Brak wydarzeń ekonomicznych.</div>
       ) : null}
       <div className="flex flex-col divide-y divide-[#1c1c1c]">
-        {Object.entries(grouped).map(([date, dayEvents]) => (
+        {sortedDays.map(([date, dayEvents]) => (
           <div key={date}>
             <div className="px-3 py-1 bg-black text-[10px] text-[#ffaa00] font-bold uppercase tracking-widest sticky top-0">
               {formatDate(date)}
