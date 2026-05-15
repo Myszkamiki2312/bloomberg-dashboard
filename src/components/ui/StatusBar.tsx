@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { clsx } from 'clsx'
 
 interface IndexQuote {
@@ -10,15 +11,16 @@ interface IndexQuote {
   pct: number
 }
 
+// Fallback skeleton shown while real data loads — keeps layout stable
 const BASE_INDICES: IndexQuote[] = [
-  { symbol: 'SPX',   name: 'S&P 500',  value: 7433.25,  change:  36.8,  pct:  0.50  },
-  { symbol: 'NDX',   name: 'NASDAQ',   value: 26331.06, change: 152.6,  pct:  0.58  },
-  { symbol: 'DJI',   name: 'DJIA',     value: 49614.64, change: 109.2,  pct:  0.22  },
-  { symbol: 'VIX',   name: 'VIX',      value: 18.40,    change:  -0.64, pct: -3.36  },
-  { symbol: 'DXY',   name: 'USD IDX',  value: 100.80,   change:  -0.22, pct: -0.22  },
-  { symbol: 'GOLD',  name: 'GOLD',     value: 4540.40,  change:  19.8,  pct:  0.44  },
-  { symbol: 'OIL',   name: 'WTI/bbl',  value: 100.78,   change:  -1.14, pct: -1.12  },
-  { symbol: 'UST10Y',name: '10Y UST',  value: 4.584,    change:   0.024,pct:  0.53  },
+  { symbol: 'SPX',    name: 'S&P 500', value: 7433.25,  change:  36.8,   pct:  0.50 },
+  { symbol: 'NDX',    name: 'NASDAQ',  value: 26331.06, change: 152.6,   pct:  0.58 },
+  { symbol: 'DJI',    name: 'DJIA',    value: 49614.64, change: 109.2,   pct:  0.22 },
+  { symbol: 'VIX',    name: 'VIX',     value: 18.40,    change:  -0.64,  pct: -3.36 },
+  { symbol: 'DXY',    name: 'USD IDX', value: 100.80,   change:  -0.22,  pct: -0.22 },
+  { symbol: 'GOLD',   name: 'GOLD',    value: 4540.40,  change:  19.8,   pct:  0.44 },
+  { symbol: 'OIL',    name: 'WTI/bbl', value: 100.78,   change:  -1.14,  pct: -1.12 },
+  { symbol: 'UST10Y', name: '10Y UST', value: 4.584,    change:   0.024, pct:  0.53 },
 ]
 
 interface Clock { label: string; tz: string }
@@ -29,10 +31,18 @@ const CLOCKS: Clock[] = [
   { label: 'TOK', tz: 'Asia/Tokyo' },
 ]
 
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
 export default function StatusBar({ isDemo }: { isDemo: boolean }) {
   const [times, setTimes] = useState<string[]>([])
   const [marketOpen, setMarketOpen] = useState(false)
   const [tick, setTick] = useState(0)
+
+  // Same key as MarketOverview — SWR deduplicates the request
+  const { data: liveIndices } = useSWR<IndexQuote[]>('/api/indices', fetcher, {
+    refreshInterval: 60000,
+    revalidateOnFocus: false,
+  })
 
   useEffect(() => {
     const update = () => {
@@ -50,13 +60,15 @@ export default function StatusBar({ isDemo }: { isDemo: boolean }) {
     return () => clearInterval(t)
   }, [])
 
-  // Each index has its own sine wave phase + frequency → independent movement
-  const indices = BASE_INDICES.map((idx, i) => {
-    const phase = i * 2.399  // golden angle spacing — avoids harmonic correlation
-    const freq  = 0.15 + i * 0.07
-    const drift = Math.sin(tick * freq + phase) * idx.value * 0.00015
-    return { ...idx, value: idx.value + drift }
-  })
+  // Use real data when available; animate fallback skeleton while loading
+  const indices = liveIndices && liveIndices.length > 0
+    ? liveIndices
+    : BASE_INDICES.map((idx, i) => {
+        const phase = i * 2.399
+        const freq  = 0.15 + i * 0.07
+        const drift = Math.sin(tick * freq + phase) * idx.value * 0.00015
+        return { ...idx, value: idx.value + drift }
+      })
 
   return (
     <div className="flex items-center justify-between bg-black border-b border-[#1c1c1c] px-2 shrink-0" style={{ height: 26 }}>
