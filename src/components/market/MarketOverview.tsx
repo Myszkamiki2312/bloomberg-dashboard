@@ -18,12 +18,12 @@ export default function MarketOverview() {
     fetcher,
     { refreshInterval: 30000 }
   )
-  const { data: indices = [] } = useSWR<IndexRow[]>('/api/indices', fetcher, { refreshInterval: 60000 })
+  const { data: indices = [] } = useSWR<IndexRow[]>('/api/indices', fetcher, { refreshInterval: 60000, revalidateOnFocus: false })
   const { data: fngData } = useSWR<{ value: number; label: string }>(
-    '/api/fng', fetcher, { refreshInterval: 3600000 }
+    '/api/fng', fetcher, { refreshInterval: 3600000, revalidateOnFocus: false }
   )
   const { data: globalData } = useSWR<{ btcDominance: number; totalMarketCapUsd: number }>(
-    '/api/crypto-global', fetcher, { refreshInterval: 300000 }
+    '/api/crypto-global', fetcher, { refreshInterval: 300000, revalidateOnFocus: false }
   )
 
   const btcDom = globalData?.btcDominance ?? 0
