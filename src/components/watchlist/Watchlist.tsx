@@ -11,6 +11,7 @@ import { SkeletonBlock } from '@/components/ui/Skeleton'
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 function fmtPnl(val: number): string {
+  if (!isFinite(val)) return '—'
   const abs = Math.abs(val)
   if (abs >= 1000) return `${(val / 1000).toFixed(1)}k`
   return val.toFixed(2)
@@ -286,7 +287,7 @@ function PositionEditor({
           />
         </div>
       </div>
-      {qty && avg && !isNaN(parseFloat(qty)) && !isNaN(parseFloat(avg)) && currentPrice && (
+      {qty && avg && isFinite(parseFloat(qty)) && isFinite(parseFloat(avg)) && currentPrice && (
         <div className="text-[9px] text-[#555]">
           Wartość: <span className="text-[#c8c8c8] num">{formatPrice(parseFloat(qty) * currentPrice)}</span>
           {' · '}
