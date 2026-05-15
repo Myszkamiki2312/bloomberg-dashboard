@@ -18,13 +18,16 @@ export default function MarketOverview() {
     { refreshInterval: 30000 }
   )
   const { data: indices = [] } = useSWR<IndexRow[]>('/api/indices', fetcher, { refreshInterval: 60000 })
+  const { data: fngData } = useSWR<{ value: number; label: string }>(
+    '/api/fng', fetcher, { refreshInterval: 3600000 }
+  )
 
   const btc = prices.find(p => p.symbol === 'BTC')
   const cryptoMcap = prices.filter(p => p.type === 'crypto').reduce((s, p) => s + p.marketCap, 0)
   const btcDom = cryptoMcap > 0 && btc ? (btc.marketCap / cryptoMcap) * 100 : 0
 
-  // Fear & greed: mock, stable
-  const fg = 65
+  const fg = fngData?.value ?? 0
+  const fgLabel = fngData?.label ?? '...'
 
   return (
     <TerminalCard title="Rynek globalny" className="h-full">
@@ -95,26 +98,29 @@ export default function MarketOverview() {
         <div className="px-2 py-1.5">
           <div className="flex items-center justify-between text-[10px] mb-1">
             <span className="text-[#888]">Strach & Chciwość</span>
-            <span className="num font-bold text-[#00ff41]">{fg} · CHCIWOŚĆ</span>
+            <span className={clsx('num font-bold', fg > 50 ? 'text-[#00ff41]' : fg < 50 ? 'text-[#ff0040]' : 'text-[#ffaa00]')}>
+              {fg > 0 ? fg : '—'} · {fgLabel}
+            </span>
           </div>
-          <div className="bar-track relative">
-            <div className="absolute inset-0 flex">
-              <div style={{ width: '25%', background: '#ff0040', opacity: 0.25, height: 4 }} />
-              <div style={{ width: '25%', background: '#ff6600', opacity: 0.25, height: 4 }} />
-              <div style={{ width: '25%', background: '#ffaa00', opacity: 0.25, height: 4 }} />
-              <div style={{ width: '25%', background: '#00ff41', opacity: 0.25, height: 4 }} />
+          {fg > 0 && (
+            <div className="bar-track relative">
+              <div className="absolute inset-0 flex">
+                <div style={{ width: '25%', background: '#ff0040', opacity: 0.25, height: 4 }} />
+                <div style={{ width: '25%', background: '#ff6600', opacity: 0.25, height: 4 }} />
+                <div style={{ width: '25%', background: '#ffaa00', opacity: 0.25, height: 4 }} />
+                <div style={{ width: '25%', background: '#00ff41', opacity: 0.25, height: 4 }} />
+              </div>
+              <div
+                className="absolute top-0 bottom-0 w-1 bg-white"
+                style={{ left: `calc(${fg}% - 1px)`, height: 4 }}
+              />
             </div>
-            <div
-              className="absolute top-0 bottom-0 w-1 bg-white"
-              style={{ left: `calc(${fg}% - 1px)`, height: 4 }}
-            />
-          </div>
+          )}
           <div className="flex justify-between text-[8px] text-[#333] mt-0.5">
             <span>Strach</span>
             <span>Neutralny</span>
             <span>Chciwość</span>
           </div>
-          <div className="text-[8px] text-[#333] mt-0.5">(dane mock)</div>
         </div>
       </div>
     </TerminalCard>
