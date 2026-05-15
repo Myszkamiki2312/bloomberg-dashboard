@@ -13,7 +13,7 @@ const OVERVIEW_SYMBOLS = 'BTC:crypto,ETH:crypto,SOL:crypto,AAPL:stock,NVDA:stock
 interface IndexRow { symbol: string; name: string; value: number; change: number; pct: number }
 
 export default function MarketOverview() {
-  const { data: prices = [] } = useSWR<AssetPrice[]>(
+  const { data: prices = [], isLoading: pricesLoading } = useSWR<AssetPrice[]>(
     `/api/prices?symbols=${OVERVIEW_SYMBOLS}`,
     fetcher,
     { refreshInterval: 30000, revalidateOnFocus: false }
@@ -58,28 +58,28 @@ export default function MarketOverview() {
         </div>
 
         {/* Crypto prices */}
-        {prices.filter(p => p.type === 'crypto').length > 0 && (
-          <div className="border-b border-[#1c1c1c]">
-            <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
-              Krypto
-            </div>
-            {prices.filter(p => p.type === 'crypto').map(asset => (
-              <AssetRow key={asset.symbol} asset={asset} />
-            ))}
+        <div className="border-b border-[#1c1c1c]">
+          <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
+            Krypto
           </div>
-        )}
+          {pricesLoading && prices.length === 0 ? <SkeletonBlock rows={3} cols={2} /> : (
+            prices.filter(p => p.type === 'crypto').map(asset => (
+              <AssetRow key={asset.symbol} asset={asset} />
+            ))
+          )}
+        </div>
 
         {/* Stock prices */}
-        {prices.filter(p => p.type === 'stock').length > 0 && (
-          <div className="border-b border-[#1c1c1c]">
-            <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
-              Akcje US
-            </div>
-            {prices.filter(p => p.type === 'stock').map(asset => (
-              <AssetRow key={asset.symbol} asset={asset} />
-            ))}
+        <div className="border-b border-[#1c1c1c]">
+          <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
+            Akcje US
           </div>
-        )}
+          {pricesLoading && prices.length === 0 ? <SkeletonBlock rows={3} cols={2} /> : (
+            prices.filter(p => p.type === 'stock').map(asset => (
+              <AssetRow key={asset.symbol} asset={asset} />
+            ))
+          )}
+        </div>
 
         {/* BTC dominance + total market cap */}
         {btcDom > 0 && (
