@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
   }
 
   const symbols = symbolsParam.split(',').map(s => {
-    const [symbol, type] = s.split(':')
+    const [raw, type] = s.split(':')
+    const symbol = raw.replace(/[^A-Z0-9.\-]/gi, '').toUpperCase().slice(0, 12)
     return { symbol, type: (type === 'stock' ? 'stock' : 'crypto') as 'stock' | 'crypto' }
-  })
+  }).filter(s => s.symbol.length > 0)
 
   try {
     const prices = await getPrices(symbols)
