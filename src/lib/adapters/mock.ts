@@ -39,14 +39,14 @@ function generateOHLC(basePrice: number, days: number, seed = 42): OHLCBar[] {
 }
 
 const MOCK_PRICES_BASE = [
-  { symbol: 'BTC',  name: 'Bitcoin',        price: 67420.5, change24h: 1243.2,  changePercent24h: 1.88,  volume24h: 28_500_000_000, marketCap: 1_327_000_000_000, type: 'crypto' as const },
-  { symbol: 'ETH',  name: 'Ethereum',       price: 3521.8,  change24h: -45.3,   changePercent24h: -1.27, volume24h: 14_200_000_000, marketCap: 423_000_000_000,   type: 'crypto' as const },
-  { symbol: 'SOL',  name: 'Solana',         price: 172.4,   change24h: 5.8,     changePercent24h: 3.48,  volume24h: 3_800_000_000,  marketCap: 79_000_000_000,    type: 'crypto' as const },
-  { symbol: 'AAPL', name: 'Apple Inc.',     price: 189.3,   change24h: 2.1,     changePercent24h: 1.12,  volume24h: 52_000_000,     marketCap: 2_910_000_000_000, type: 'stock'  as const },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.',   price: 875.4,   change24h: -12.6,   changePercent24h: -1.42, volume24h: 38_000_000,     marketCap: 2_156_000_000_000, type: 'stock'  as const },
-  { symbol: 'TSLA', name: 'Tesla Inc.',     price: 182.7,   change24h: 4.3,     changePercent24h: 2.41,  volume24h: 89_000_000,     marketCap: 582_000_000_000,   type: 'stock'  as const },
-  { symbol: 'MSFT', name: 'Microsoft Corp.',price: 415.2,   change24h: 1.8,     changePercent24h: 0.44,  volume24h: 21_000_000,     marketCap: 3_085_000_000_000, type: 'stock'  as const },
-  { symbol: 'XRP',  name: 'XRP',            price: 0.618,   change24h: -0.012,  changePercent24h: -1.9,  volume24h: 1_800_000_000,  marketCap: 34_000_000_000,    type: 'crypto' as const },
+  { symbol: 'BTC',  name: 'Bitcoin',        price: 103200,  change24h: -1850,   changePercent24h: -1.76, volume24h: 35_000_000_000, marketCap: 2_045_000_000_000, type: 'crypto' as const },
+  { symbol: 'ETH',  name: 'Ethereum',       price: 2420,    change24h: -68,     changePercent24h: -2.73, volume24h: 18_500_000_000, marketCap: 292_000_000_000,   type: 'crypto' as const },
+  { symbol: 'SOL',  name: 'Solana',         price: 166,     change24h: -4.2,    changePercent24h: -2.47, volume24h: 4_200_000_000,  marketCap: 81_000_000_000,    type: 'crypto' as const },
+  { symbol: 'AAPL', name: 'Apple Inc.',     price: 211.5,   change24h: 1.8,     changePercent24h: 0.86,  volume24h: 48_000_000,     marketCap: 3_180_000_000_000, type: 'stock'  as const },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.',   price: 135.4,   change24h: 2.1,     changePercent24h: 1.58,  volume24h: 280_000_000,    marketCap: 3_300_000_000_000, type: 'stock'  as const },
+  { symbol: 'TSLA', name: 'Tesla Inc.',     price: 338.7,   change24h: -8.9,    changePercent24h: -2.56, volume24h: 110_000_000,    marketCap: 1_086_000_000_000, type: 'stock'  as const },
+  { symbol: 'MSFT', name: 'Microsoft Corp.',price: 449.8,   change24h: 3.2,     changePercent24h: 0.72,  volume24h: 22_000_000,     marketCap: 3_350_000_000_000, type: 'stock'  as const },
+  { symbol: 'XRP',  name: 'XRP',            price: 2.38,    change24h: -0.07,   changePercent24h: -2.86, volume24h: 5_200_000_000,  marketCap: 137_000_000_000,   type: 'crypto' as const },
 ]
 
 export function getMockPrices(): AssetPrice[] {
@@ -55,14 +55,14 @@ export function getMockPrices(): AssetPrice[] {
 }
 
 const BASE_PRICES: Record<string, number> = {
-  BTC: 67420,
-  ETH: 3521,
-  SOL: 172,
-  AAPL: 189,
-  NVDA: 875,
-  TSLA: 182,
-  MSFT: 415,
-  XRP: 0.618,
+  BTC: 103200,
+  ETH: 2420,
+  SOL: 166,
+  AAPL: 211,
+  NVDA: 135,
+  TSLA: 339,
+  MSFT: 450,
+  XRP: 2.38,
 }
 
 export function getMockOHLC(symbol: string, days = 90): OHLCBar[] {

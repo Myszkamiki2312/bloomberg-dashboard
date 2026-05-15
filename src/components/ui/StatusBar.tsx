@@ -11,14 +11,14 @@ interface IndexQuote {
 }
 
 const BASE_INDICES: IndexQuote[] = [
-  { symbol: 'SPX',  name: 'S&P 500',  value: 5261.72, change: 21.34, pct: 0.41  },
-  { symbol: 'NDX',  name: 'NASDAQ',   value: 18234.30, change: 122.4, pct: 0.68 },
-  { symbol: 'DJI',  name: 'DJIA',     value: 39721.36, change: 88.21, pct: 0.22 },
-  { symbol: 'VIX',  name: 'VIX',      value: 14.23,   change: -0.38, pct: -2.60 },
-  { symbol: 'DXY',  name: 'USD IDX',  value: 104.72,  change: -0.14, pct: -0.13 },
-  { symbol: 'GOLD', name: 'GOLD',     value: 2342.80, change: 7.40,  pct: 0.32  },
-  { symbol: 'OIL',  name: 'WTI/bbl',  value: 79.24,   change: -0.58, pct: -0.73 },
-  { symbol: 'UST10Y',name:'10Y UST',  value: 4.424,   change: 0.018, pct: 0.41  },
+  { symbol: 'SPX',   name: 'S&P 500',  value: 5657.43,  change:  28.4,  pct:  0.50  },
+  { symbol: 'NDX',   name: 'NASDAQ',   value: 19922.28, change: 115.2,  pct:  0.58  },
+  { symbol: 'DJI',   name: 'DJIA',     value: 41249.38, change:  89.6,  pct:  0.22  },
+  { symbol: 'VIX',   name: 'VIX',      value: 17.89,    change:  -0.62, pct: -3.35  },
+  { symbol: 'DXY',   name: 'USD IDX',  value: 100.34,   change:  -0.28, pct: -0.28  },
+  { symbol: 'GOLD',  name: 'GOLD',     value: 3238.50,  change:  14.2,  pct:  0.44  },
+  { symbol: 'OIL',   name: 'WTI/bbl',  value: 62.84,    change:  -0.72, pct: -1.13  },
+  { symbol: 'UST10Y',name: '10Y UST',  value: 4.482,    change:   0.024,pct:  0.54  },
 ]
 
 interface Clock { label: string; tz: string }
