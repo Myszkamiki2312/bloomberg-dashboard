@@ -14,7 +14,7 @@ const FALLBACK: NewsItem[] = [
 ]
 
 export default function NewsTickerBar() {
-  const { data: news = [] } = useSWR<NewsItem[]>('/api/news', fetcher, { refreshInterval: 300000 })
+  const { data: news = [] } = useSWR<NewsItem[]>('/api/news', fetcher, { refreshInterval: 300000, revalidateOnFocus: false })
 
   const items = news.length > 0 ? news : FALLBACK
   const doubled = [...items, ...items]

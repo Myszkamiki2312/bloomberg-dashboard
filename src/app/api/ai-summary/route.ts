@@ -27,10 +27,12 @@ export async function GET() {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
 
+  const AI_CACHE = { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+
   // Kolejność: Groq (darmowy) → Anthropic → OpenAI → mock
   if (groqKey) {
     try {
-      return NextResponse.json(await fetchGroqSummary(groqKey))
+      return NextResponse.json(await fetchGroqSummary(groqKey), AI_CACHE)
     } catch (err) {
       console.error('Groq error:', err)
     }
@@ -38,7 +40,7 @@ export async function GET() {
 
   if (anthropicKey) {
     try {
-      return NextResponse.json(await fetchAnthropicSummary(anthropicKey))
+      return NextResponse.json(await fetchAnthropicSummary(anthropicKey), AI_CACHE)
     } catch (err) {
       console.error('Anthropic error:', err)
     }
@@ -46,7 +48,7 @@ export async function GET() {
 
   if (openaiKey) {
     try {
-      return NextResponse.json(await fetchOpenAISummary(openaiKey))
+      return NextResponse.json(await fetchOpenAISummary(openaiKey), AI_CACHE)
     } catch (err) {
       console.error('OpenAI error:', err)
     }

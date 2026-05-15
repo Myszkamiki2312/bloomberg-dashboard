@@ -19,6 +19,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function NewsPanel() {
   const { data: news = [], isLoading } = useSWR<NewsItem[]>('/api/news', fetcher, {
     refreshInterval: 300000,
+    revalidateOnFocus: false,
   })
 
   return (
