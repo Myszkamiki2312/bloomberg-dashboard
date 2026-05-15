@@ -67,12 +67,17 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<AssetPrice[]
       const d = data[id]
       if (!d) return null
 
+      const currentPrice = d.usd ?? 0
+      const changePct = d.usd_24h_change ?? 0
+      // Absolute change: derived from previous price = current / (1 + pct/100)
+      // Using current * pct/100 overstates magnitude; correct formula avoids that
+      const prevPrice = changePct !== -100 ? currentPrice / (1 + changePct / 100) : 0
       return {
         symbol,
         name: symbol,
-        price: d.usd ?? 0,
-        change24h: ((d.usd_24h_change ?? 0) / 100) * (d.usd ?? 0),
-        changePercent24h: d.usd_24h_change ?? 0,
+        price: currentPrice,
+        change24h: currentPrice - prevPrice,
+        changePercent24h: changePct,
         volume24h: d.usd_24h_vol ?? 0,
         marketCap: d.usd_market_cap ?? 0,
         type: 'crypto' as const,
