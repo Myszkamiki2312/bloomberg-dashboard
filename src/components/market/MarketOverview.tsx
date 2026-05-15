@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import type { AssetPrice } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { formatPrice, formatVolume } from '@/lib/utils/formatters'
+import { SkeletonBlock } from '@/components/ui/Skeleton'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -35,28 +36,26 @@ export default function MarketOverview() {
       <div className="overflow-auto h-full">
 
         {/* Indices table */}
-        {indices.length > 0 && (
-          <div className="border-b border-[#1c1c1c]">
-            <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
-              Indeksy
-            </div>
-            {indices.map(idx => {
-              const pos = idx.pct >= 0
-              const decimals = idx.value < 10 ? 4 : idx.value < 1000 ? 2 : 2
-              return (
-                <div key={idx.symbol} className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
-                  <span className="text-[#888]">{idx.symbol}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="num text-[#c8c8c8]">{idx.value.toLocaleString('pl-PL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
-                    <span className={clsx('num font-bold w-14 text-right', pos ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                      {pos ? '+' : ''}{idx.pct.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
+        <div className="border-b border-[#1c1c1c]">
+          <div className="px-2 py-1 text-[9px] text-[#444] uppercase tracking-widest bg-[#050505]">
+            Indeksy
           </div>
-        )}
+          {indices.length === 0 ? <SkeletonBlock rows={8} cols={2} /> : indices.map(idx => {
+            const pos = idx.pct >= 0
+            const decimals = idx.value < 10 ? 4 : idx.value < 1000 ? 2 : 2
+            return (
+              <div key={idx.symbol} className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
+                <span className="text-[#888]">{idx.symbol}</span>
+                <div className="flex items-center gap-3">
+                  <span className="num text-[#c8c8c8]">{idx.value.toLocaleString('pl-PL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
+                  <span className={clsx('num font-bold w-14 text-right', pos ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                    {pos ? '+' : ''}{idx.pct.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
 
         {/* Crypto prices */}
         {prices.filter(p => p.type === 'crypto').length > 0 && (
