@@ -42,9 +42,11 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
       block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] ??
       block.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''
 
-    const link =
+    const rawLink =
       block.match(/<link>(.*?)<\/link>/)?.[1] ??
-      block.match(/<guid[^>]*>(.*?)<\/guid>/)?.[1] ?? '#'
+      block.match(/<guid[^>]*>(.*?)<\/guid>/)?.[1] ?? ''
+    // Only allow http/https URLs — reject javascript: and other dangerous schemes
+    const link = /^https?:\/\//i.test(rawLink.trim()) ? rawLink.trim() : '#'
 
     const description =
       block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/)?.[1] ??

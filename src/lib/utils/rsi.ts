@@ -27,9 +27,15 @@ export function calculateSMA(prices: number[], period: number): number {
 
 export function calculateVolatility(prices: number[]): number {
   if (prices.length < 2) return 0
-  const returns = prices.slice(1).map((p, i) => Math.log(p / prices[i]))
-  const mean = returns.reduce((a, b) => a + b, 0) / returns.length
-  const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length
+  // Filter out zero/negative prices before log to avoid -Infinity returns
+  const validPairs = prices.slice(1).reduce<number[]>((acc, p, i) => {
+    const prev = prices[i]
+    if (prev > 0 && p > 0) acc.push(Math.log(p / prev))
+    return acc
+  }, [])
+  if (validPairs.length === 0) return 0
+  const mean = validPairs.reduce((a, b) => a + b, 0) / validPairs.length
+  const variance = validPairs.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / validPairs.length
   return Math.round(Math.sqrt(variance) * Math.sqrt(252) * 100 * 10) / 10
 }
 

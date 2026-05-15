@@ -16,7 +16,7 @@ export default function MarketOverview() {
   const { data: prices = [] } = useSWR<AssetPrice[]>(
     `/api/prices?symbols=${OVERVIEW_SYMBOLS}`,
     fetcher,
-    { refreshInterval: 30000 }
+    { refreshInterval: 30000, revalidateOnFocus: false }
   )
   const { data: indices = [] } = useSWR<IndexRow[]>('/api/indices', fetcher, { refreshInterval: 60000, revalidateOnFocus: false })
   const { data: fngData } = useSWR<{ value: number; label: string }>(

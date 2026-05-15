@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(getMockPrices())
   }
 
-  const symbols = symbolsParam.split(',').map(s => {
+  const symbols = symbolsParam.split(',').slice(0, 50).map(s => {
     const [raw, type] = s.split(':')
     const symbol = raw.replace(/[^A-Z0-9.\-]/gi, '').toUpperCase().slice(0, 12)
     return { symbol, type: (type === 'stock' ? 'stock' : 'crypto') as 'stock' | 'crypto' }
