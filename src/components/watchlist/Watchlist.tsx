@@ -99,7 +99,9 @@ export default function Watchlist() {
                   </span>
                   <div className="min-w-0">
                     <div className="font-bold text-[#ffaa00] truncate">{entry.symbol}</div>
-                    <div className="text-[9px] text-[#444] truncate">{entry.name}</div>
+                    <div className="text-[9px] text-[#444] truncate">
+                      {p?.name && p.name !== entry.symbol ? p.name : entry.name}
+                    </div>
                   </div>
                 </div>
 
