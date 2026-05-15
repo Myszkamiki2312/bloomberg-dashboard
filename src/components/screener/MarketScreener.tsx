@@ -104,7 +104,7 @@ export default function MarketScreener() {
                 </td>
               </tr>
             ) : sorted.map(item => {
-              const trend = TREND_MAP[item.trend]
+              const trend = TREND_MAP[item.trend] ?? TREND_MAP.neutral
               return (
                 <tr key={item.symbol}
                     onClick={() => setSelectedSymbol(item.symbol, item.type)}

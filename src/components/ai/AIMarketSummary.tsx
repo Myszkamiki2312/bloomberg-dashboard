@@ -69,9 +69,10 @@ export default function AIMarketSummary() {
               <div className="text-[10px] text-[#ffaa00] uppercase tracking-widest mb-1.5">Sektory</div>
               <div className="flex flex-col gap-1">
                 {data.sectors.map(sector => {
+                  const perf = Number(sector.performance) || 0
                   // Scale: ±15% performance → ±50% of track (each half = 50%)
-                  const pct = Math.min(Math.abs(sector.performance) * (50 / 15), 50)
-                  const pos = sector.performance >= 0
+                  const pct = Math.min(Math.abs(perf) * (50 / 15), 50)
+                  const pos = perf >= 0
                   return (
                   <div key={sector.name} className="flex items-center gap-2">
                     <span className="text-[10px] text-[#c8c8c8] w-24 shrink-0 truncate">{sector.name}</span>
@@ -88,7 +89,7 @@ export default function AIMarketSummary() {
                       />
                     </div>
                     <span className={clsx('text-[10px] font-mono w-12 text-right shrink-0', pos ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                      {pos ? '+' : ''}{sector.performance.toFixed(1)}%
+                      {pos ? '+' : ''}{perf.toFixed(1)}%
                     </span>
                   </div>
                   )

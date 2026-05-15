@@ -48,7 +48,7 @@ export async function getOHLC(symbol: string, type: 'stock' | 'crypto', days = 9
 
   try {
     if (type === 'crypto' && getCoinId(symbol)) {
-      const data = await fetchCryptoOHLC(symbol, Math.min(days, 90))
+      const data = await fetchCryptoOHLC(symbol, Math.min(days, 180))
       if (data.length > 0) return data
     } else {
       const data = await fetchStockOHLC(symbol, days)
