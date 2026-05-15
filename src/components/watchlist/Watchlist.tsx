@@ -54,12 +54,14 @@ export default function Watchlist() {
   const priceMap = Object.fromEntries(prices.map(p => [p.symbol, p]))
   const maxVol = Math.max(...prices.map(p => p.volume24h), 1)
 
-  // Portfolio totals
+  // Portfolio totals — wait for all position prices before computing P&L
+  // (avoids showing large fake loss while prices are still loading)
   const portfolioEntries = watchlist.filter(w => w.quantity && w.quantity > 0 && w.avgPrice && w.avgPrice > 0)
-  const totalValue  = portfolioEntries.reduce((sum, w) => {
+  const portfolioPricesLoaded = portfolioEntries.length > 0 && portfolioEntries.every(w => priceMap[w.symbol] !== undefined)
+  const totalValue  = portfolioPricesLoaded ? portfolioEntries.reduce((sum, w) => {
     const p = priceMap[w.symbol]
     return sum + (p ? p.price * w.quantity! : 0)
-  }, 0)
+  }, 0) : 0
   const totalCost   = portfolioEntries.reduce((sum, w) => sum + w.avgPrice! * w.quantity!, 0)
   const totalPnl    = totalValue - totalCost
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
@@ -315,7 +317,8 @@ function AddSymbol() {
   const [error, setError] = useState<string | null>(null)
 
   const handleAdd = () => {
-    const upper = symbol.trim().toUpperCase()
+    // Sanitize: only A-Z 0-9 . - (same rules as the prices API)
+    const upper = symbol.trim().replace(/[^A-Z0-9.\-]/gi, '').toUpperCase().slice(0, 12)
     if (!upper) return
     if (watchlist.some(w => w.symbol === upper)) {
       setError(`${upper} już na liście`)
