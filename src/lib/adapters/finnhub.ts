@@ -11,8 +11,8 @@ export async function fetchStockQuote(symbol: string): Promise<AssetPrice | null
   if (!key) return null
 
   const [quoteRes, profileRes] = await Promise.all([
-    fetch(`${BASE}/quote?symbol=${symbol}&token=${key}`, { next: { revalidate: 60 } }),
-    fetch(`${BASE}/stock/profile2?symbol=${symbol}&token=${key}`, { next: { revalidate: 3600 } }),
+    fetch(`${BASE}/quote?symbol=${symbol}&token=${key}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(6000) }),
+    fetch(`${BASE}/stock/profile2?symbol=${symbol}&token=${key}`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(6000) }),
   ])
 
   if (!quoteRes.ok) return null
@@ -43,7 +43,7 @@ export async function fetchStockOHLC(symbol: string, days = 90): Promise<OHLCBar
 
   const res = await fetch(
     `${BASE}/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${key}`,
-    { next: { revalidate: 3600 } }
+    { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) }
   )
   if (!res.ok) return []
 
