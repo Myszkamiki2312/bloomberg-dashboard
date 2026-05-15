@@ -68,7 +68,7 @@ export async function GET() {
       const pct = prev > 0 ? (change / prev) * 100 : 0
       return { symbol: idx.label, name: idx.name || name, value: price, change, pct }
     }
-    const fb = FALLBACK[idx.ticker]
+    const fb = FALLBACK[idx.ticker] ?? { value: 0, change: 0, pct: 0 }
     return { symbol: idx.label, name: idx.name, value: fb.value, change: fb.change, pct: fb.pct }
   })
 

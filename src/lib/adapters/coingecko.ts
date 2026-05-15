@@ -71,7 +71,7 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<AssetPrice[]
         symbol,
         name: symbol,
         price: d.usd ?? 0,
-        change24h: ((d.usd_24h_change ?? 0) / 100) * d.usd,
+        change24h: ((d.usd_24h_change ?? 0) / 100) * (d.usd ?? 0),
         changePercent24h: d.usd_24h_change ?? 0,
         volume24h: d.usd_24h_vol ?? 0,
         marketCap: d.usd_market_cap ?? 0,
