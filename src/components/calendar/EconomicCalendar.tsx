@@ -23,6 +23,7 @@ export default function EconomicCalendar() {
     acc[ev.date].push(ev)
     return acc
   }, {})
+  Object.values(grouped).forEach(day => day.sort((a, b) => a.time.localeCompare(b.time)))
 
   return (
     <TerminalCard title="Kalendarz ekonomiczny" badge="DEMO" badgeColor="muted" className="h-full">
