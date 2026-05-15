@@ -15,6 +15,7 @@ export async function GET() {
     const res = await fetch('https://api.coingecko.com/api/v3/global', {
       headers: key ? { 'x-cg-demo-api-key': key } : {},
       next: { revalidate: 300 },
+      signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) throw new Error(`CoinGecko global ${res.status}`)
     const json = await res.json()

@@ -15,6 +15,7 @@ export async function GET() {
   try {
     const res = await fetch('https://api.alternative.me/fng/', {
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(6000),
     })
     if (!res.ok) throw new Error(`fng ${res.status}`)
     const json = await res.json()
