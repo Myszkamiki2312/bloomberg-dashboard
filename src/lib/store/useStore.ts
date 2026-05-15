@@ -123,6 +123,8 @@ export const useStore = create<AppStore>()(
       partialize: state => ({
         watchlist: state.watchlist,
         alerts: state.alerts,
+        selectedSymbol: state.selectedSymbol,
+        selectedType: state.selectedType,
       }),
     }
   )

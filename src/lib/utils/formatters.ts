@@ -1,4 +1,5 @@
 export function formatPrice(price: number, decimals?: number): string {
+  if (!isFinite(price)) return '—'
   if (price === 0) return '0.00'
   const d = decimals ?? (price < 1 ? 6 : price < 100 ? 4 : 2)
   return price.toLocaleString('pl-PL', {
@@ -22,6 +23,7 @@ export function formatPercent(value: number): string {
 }
 
 export function formatVolume(value: number): string {
+  if (!isFinite(value)) return '—'
   if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`
   if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`
   if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`
