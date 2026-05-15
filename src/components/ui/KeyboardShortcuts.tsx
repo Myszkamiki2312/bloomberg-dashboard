@@ -10,7 +10,7 @@ interface Shortcut {
 const SHORTCUTS: Shortcut[] = [
   { category: 'Nawigacja', key: '?', desc: 'Pokaż/ukryj ten ekran' },
   { category: 'Nawigacja', key: 'ESC', desc: 'Zamknij okno / anuluj' },
-  { category: 'Nawigacja', key: 'F1–F8', desc: 'Przełącz panel (planowane)' },
+  { category: 'Nawigacja', key: 'F1–F8', desc: 'Podświetl panel (klik lub Fn+F na Mac)' },
   { category: 'Watchlista', key: 'Klik wiersza', desc: 'Załaduj symbol na wykres' },
   { category: 'Watchlista', key: '+ Dodaj', desc: 'Dodaj nowy symbol' },
   { category: 'Watchlista', key: 'Hover → ✕', desc: 'Usuń symbol' },
@@ -71,7 +71,7 @@ export default function KeyboardShortcuts({ onClose }: { onClose: () => void }) 
         </div>
 
         <div className="border-t border-[#1c1c1c] px-4 py-2 text-[9px] text-[#444]">
-          Dane: CoinGecko (krypto) · Yahoo Finance / Finnhub (akcje) · RSS (news) · DEMO mock gdy brak kluczy API
+          Dane: CoinGecko · Yahoo Finance · Finnhub · WSJ/Yahoo RSS · Alternative.me (Fear&amp;Greed) · mock gdy brak kluczy API
         </div>
       </div>
     </div>
