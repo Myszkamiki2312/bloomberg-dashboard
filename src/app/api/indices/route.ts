@@ -47,14 +47,14 @@ async function fetchQuote(ticker: string): Promise<{ price: number; prev: number
 }
 
 const FALLBACK: Record<string, { value: number; change: number; pct: number }> = {
-  '^GSPC':    { value: 7433.3,  change:  36.8,  pct:  0.50 },
-  '^IXIC':    { value: 26331.1, change: 152.6,  pct:  0.58 },
-  '^DJI':     { value: 49614.6, change: 109.2,  pct:  0.22 },
+  '^GSPC':    { value: 5840.3,  change:  18.4,  pct:  0.32 },
+  '^IXIC':    { value: 18950.6, change:  75.2,  pct:  0.40 },
+  '^DJI':     { value: 43250.8, change:  89.5,  pct:  0.21 },
   '^VIX':     { value: 18.40,   change:  -0.64, pct: -3.36 },
-  'USDPLN=X': { value: 3.6527,  change:  -0.009,pct: -0.25 },
-  'EURUSD=X': { value: 1.1632,  change:   0.004,pct:  0.34 },
-  'GC=F':     { value: 4540.4,  change:  19.8,  pct:  0.44 },
-  'CL=F':     { value: 100.78,  change:  -1.14, pct: -1.12 },
+  'USDPLN=X': { value: 3.7850,  change:  -0.011,pct: -0.29 },
+  'EURUSD=X': { value: 1.1320,  change:   0.003,pct:  0.27 },
+  'GC=F':     { value: 3320.0,  change:  12.4,  pct:  0.37 },
+  'CL=F':     { value: 73.50,   change:  -0.82, pct: -1.10 },
 }
 
 export async function GET() {
