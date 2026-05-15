@@ -5,12 +5,22 @@ import type { MarketSummary } from '@/types'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const PROMPT =
-  'Jesteś analitykiem rynku finansowego. Napisz aktualne krótkie podsumowanie nastrojów rynkowych po polsku. ' +
-  'Odpowiedz WYŁĄCZNIE jako JSON (bez markdown): ' +
-  '{ "sentiment": "bullish|bearish|neutral", "sentimentScore": 0-100, "summary": "2-3 zdania", ' +
-  '"keyPoints": ["max 5 punktów"], "sectors": [{"name": "nazwa", "performance": liczba_procent}] }. ' +
-  'Uwzględnij: krypto, akcje US, Europa, surowce. Sektory: Technologia, Krypto, Energia, Finanse, Zdrowie, Przemysł.'
+function buildPrompt(): string {
+  const date = new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })
+  return (
+    `Jesteś analitykiem rynku finansowego. Data: ${date}. ` +
+    'Napisz krótkie podsumowanie aktualnych nastrojów rynkowych po polsku. ' +
+    'Odpowiedz WYŁĄCZNIE jako obiekt JSON (bez markdown, bez komentarzy): ' +
+    '{"sentiment":"bullish","sentimentScore":63,"summary":"2-3 zdania po polsku.",' +
+    '"keyPoints":["punkt 1","punkt 2","punkt 3"],' +
+    '"sectors":[{"name":"Technologia","performance":1.5},{"name":"Krypto","performance":-0.8},' +
+    '{"name":"Energia","performance":0.3},{"name":"Finanse","performance":0.7},' +
+    '{"name":"Zdrowie","performance":-0.2},{"name":"Przemysł","performance":0.4}]}. ' +
+    'sentiment: bullish/bearish/neutral. sentimentScore: liczba 0-100. ' +
+    'performance: liczba dziesiętna (procent, np. 1.5 lub -0.8). ' +
+    'Uwzględnij: krypto (BTC>100k), akcje US (S&P500 blisko ATH), Europa, surowce (złoto rekordowe).'
+  )
+}
 
 export async function GET() {
   const groqKey      = process.env.GROQ_API_KEY
@@ -69,7 +79,7 @@ async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
       model: 'llama-3.1-8b-instant',
       max_tokens: 600,
       temperature: 0.7,
-      messages: [{ role: 'user', content: PROMPT }],
+      messages: [{ role: 'user', content: buildPrompt() }],
       response_format: { type: 'json_object' },
     }),
     signal: AbortSignal.timeout(12000),
@@ -94,7 +104,7 @@ async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
-      messages: [{ role: 'user', content: PROMPT }],
+      messages: [{ role: 'user', content: buildPrompt() }],
     }),
     signal: AbortSignal.timeout(12000),
   })
@@ -118,7 +128,7 @@ async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       max_tokens: 600,
-      messages: [{ role: 'user', content: PROMPT }],
+      messages: [{ role: 'user', content: buildPrompt() }],
       response_format: { type: 'json_object' },
     }),
     signal: AbortSignal.timeout(12000),
