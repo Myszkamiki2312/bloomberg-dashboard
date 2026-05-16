@@ -7,7 +7,7 @@ import type { PriceAlert } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 
 export default function PriceAlerts() {
-  const { alerts, addAlert, removeAlert, selectedSymbol, watchlist } = useStore()
+  const { alerts, addAlert, removeAlert, clearTriggeredAlerts, selectedSymbol, watchlist } = useStore()
   const [open, setOpen] = useState(false)
   const [symbol, setSymbol] = useState('')
   const [price, setPrice] = useState('')
@@ -126,8 +126,14 @@ export default function PriceAlerts() {
 
         {triggered.length > 0 && (
           <div>
-            <div className="px-3 py-1 text-[10px] text-[#555] uppercase tracking-widest border-b border-[#1c1c1c]">
-              Wyzwolone
+            <div className="px-3 py-1 text-[10px] text-[#555] uppercase tracking-widest border-b border-[#1c1c1c] flex items-center justify-between">
+              <span>Wyzwolone</span>
+              <button
+                onClick={clearTriggeredAlerts}
+                className="text-[9px] text-[#444] hover:text-[#ff0040] transition-colors"
+              >
+                wyczyść
+              </button>
             </div>
             {triggered.map(alert => (
               <AlertRow key={alert.id} alert={alert} onRemove={removeAlert} />

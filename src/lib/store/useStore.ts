@@ -26,6 +26,7 @@ interface AppStore {
   updateWatchlistEntry: (symbol: string, patch: Pick<WatchlistEntry, 'quantity' | 'avgPrice'>) => void
   addAlert: (alert: Omit<PriceAlert, 'id' | 'createdAt' | 'triggered'>) => void
   removeAlert: (id: string) => void
+  clearTriggeredAlerts: () => void
   triggerAlert: (id: string) => void
   checkAlerts: (prices: Record<string, number>) => void
 }
@@ -78,6 +79,8 @@ export const useStore = create<AppStore>()(
         })),
 
       removeAlert: id => set(s => ({ alerts: s.alerts.filter(a => a.id !== id) })),
+
+      clearTriggeredAlerts: () => set(s => ({ alerts: s.alerts.filter(a => !a.triggered) })),
 
       triggerAlert: id =>
         set(s => ({
