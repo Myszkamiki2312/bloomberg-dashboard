@@ -31,6 +31,9 @@ export default function EconomicCalendar() {
 
   return (
     <TerminalCard title="Kalendarz ekonomiczny" badge="DEMO" badgeColor="muted" className="h-full">
+      <div className="px-3 py-1 border-b border-[#1c1c1c] text-[9px] text-[#ffaa00]">
+        Przykładowy harmonogram · daty i prognozy nie są danymi rynkowymi
+      </div>
       {isLoading && events.length === 0 ? (
         <SkeletonBlock rows={6} cols={3} />
       ) : error ? (
@@ -74,7 +77,7 @@ export default function EconomicCalendar() {
                         )}
                         {hasActual && (
                           <span className="text-[#555]">
-                            Actual:{' '}
+                            Odczyt:{' '}
                             <span className={clsx(
                               'font-bold',
                               (() => {

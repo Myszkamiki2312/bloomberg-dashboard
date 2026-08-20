@@ -22,6 +22,33 @@ const RSS_FEEDS: FeedConfig[] = [
                                                                 source: 'Yahoo Crypto',   lang: 'en' },
 ]
 
+function decodeEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#039;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+}
+
+function canonicalUrl(value: string): string {
+  if (value === '#') return value
+  try {
+    const url = new URL(value)
+    return `${url.origin}${url.pathname}`.replace(/\/$/, '')
+  } catch {
+    return value.split('?')[0]
+  }
+}
+
+function normalizedTitle(value: string): string {
+  return value.toLocaleLowerCase('pl-PL').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+}
+
 async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
   const res = await fetch(feed.url, {
     headers: { 'User-Agent': 'Mozilla/5.0 Bloomberg-Dashboard/1.0' },
@@ -42,9 +69,10 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
       block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] ??
       block.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''
 
-    const rawLink =
+    const rawLink = decodeEntities(
       block.match(/<link>(.*?)<\/link>/)?.[1] ??
       block.match(/<guid[^>]*>(.*?)<\/guid>/)?.[1] ?? ''
+    )
     // Only allow http/https URLs — reject javascript: and other dangerous schemes
     const link = /^https?:\/\//i.test(rawLink.trim()) ? rawLink.trim() : '#'
 
@@ -56,18 +84,6 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
 
     if (!title.trim()) continue
 
-    // Decode HTML entities in title — covers named, decimal, and hex numeric references
-    const decodeEntities = (s: string) =>
-      s.replace(/&amp;/g, '&')
-       .replace(/&lt;/g, '<')
-       .replace(/&gt;/g, '>')
-       .replace(/&quot;/g, '"')
-       .replace(/&apos;/g, "'")
-       .replace(/&#039;/g, "'")
-       .replace(/&nbsp;/g, ' ')
-       .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-       .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
-
     const cleanTitle = decodeEntities(title.trim())
 
     const rawSummary = description.replace(/<[^>]*>/g, '').trim()
@@ -75,7 +91,7 @@ async function parseRSSFeed(feed: FeedConfig): Promise<NewsItem[]> {
 
     // Use URL as ID when valid (unique per article); fall back to title slice
     const itemId = link !== '#'
-      ? link.slice(0, 200)
+      ? canonicalUrl(link).slice(0, 200)
       : (cleanTitle.slice(0, 80) + pubDate.slice(0, 30))
 
     items.push({
@@ -123,11 +139,14 @@ export async function GET() {
     })
   }
 
-  const seen = new Set<string>()
+  const seenUrls = new Set<string>()
+  const seenTitles = new Set<string>()
   const unique = combined.filter(item => {
-    // Use id (URL-based) as dedup key — title.slice would falsely deduplicate similar headlines
-    if (seen.has(item.id)) return false
-    seen.add(item.id)
+    const urlKey = canonicalUrl(item.url)
+    const titleKey = normalizedTitle(item.title)
+    if ((urlKey !== '#' && seenUrls.has(urlKey)) || seenTitles.has(titleKey)) return false
+    if (urlKey !== '#') seenUrls.add(urlKey)
+    seenTitles.add(titleKey)
     return true
   })
 

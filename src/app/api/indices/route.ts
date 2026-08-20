@@ -1,15 +1,9 @@
 import { NextResponse } from 'next/server'
+import type { MarketIndex } from '@/types'
+import { fetchTradingViewIndices } from '@/lib/adapters/tradingview'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-interface IndexQuote {
-  symbol: string
-  name: string
-  value: number
-  change: number
-  pct: number
-}
 
 const INDICES = [
   { ticker: '^GSPC',    label: 'SPX',    name: 'S&P 500'  },
@@ -58,18 +52,44 @@ const FALLBACK: Record<string, { value: number; change: number; pct: number }> =
 }
 
 export async function GET() {
-  const results = await Promise.allSettled(INDICES.map(idx => fetchQuote(idx.ticker)))
+  const [tradingViewIndices, results] = await Promise.all([
+    fetchTradingViewIndices().catch(() => []),
+    Promise.allSettled(INDICES.map(idx => fetchQuote(idx.ticker))),
+  ])
+  const tradingViewMap = new Map(tradingViewIndices.map(index => [index.symbol, index]))
+  const lastUpdated = new Date().toISOString()
 
-  const output: IndexQuote[] = INDICES.map((idx, i) => {
+  const output: MarketIndex[] = INDICES.map((idx, i) => {
+    const tradingView = tradingViewMap.get(idx.label)
+    if (tradingView) return tradingView
+
     const r = results[i]
     if (r.status === 'fulfilled' && r.value) {
       const { price, prev, name } = r.value
       const change = price - prev
       const pct = prev > 0 ? (change / prev) * 100 : 0
-      return { symbol: idx.label, name: idx.name || name, value: price, change, pct }
+      return {
+        symbol: idx.label,
+        name: idx.name || name,
+        value: price,
+        change,
+        pct,
+        source: 'Yahoo Finance',
+        quality: 'delayed',
+        lastUpdated,
+      }
     }
     const fb = FALLBACK[idx.ticker] ?? { value: 0, change: 0, pct: 0 }
-    return { symbol: idx.label, name: idx.name, value: fb.value, change: fb.change, pct: fb.pct }
+    return {
+      symbol: idx.label,
+      name: idx.name,
+      value: fb.value,
+      change: fb.change,
+      pct: fb.pct,
+      source: 'Dane demonstracyjne',
+      quality: 'demo',
+      lastUpdated,
+    }
   })
 
   return NextResponse.json(output, {

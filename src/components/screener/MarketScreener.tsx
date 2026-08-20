@@ -7,7 +7,11 @@ import TerminalCard from '@/components/ui/TerminalCard'
 import { formatPrice, formatVolume } from '@/lib/utils/formatters'
 import { useStore } from '@/lib/store/useStore'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 type SortKey = keyof Pick<ScreenerItem, 'symbol' | 'price' | 'change' | 'volume' | 'rsi' | 'volatility'>
 
@@ -47,6 +51,8 @@ export default function MarketScreener() {
       const cmp = typeof av === 'number' ? av - (bv as number) : (av as string).localeCompare(bv as string)
       return dir === 'asc' ? cmp : -cmp
     })
+  const hasDemoData = data.some(item => item.quality === 'demo')
+  const hasDelayedData = data.some(item => item.quality === 'delayed')
 
   const Th = ({ k, label, right = true }: { k: SortKey; label: string; right?: boolean }) => (
     <th className={clsx('px-2 py-1 text-[9px] font-bold uppercase tracking-widest cursor-pointer select-none transition-colors', right ? 'text-right' : 'text-left', sort === k ? 'text-[#ffaa00]' : 'text-[#444] hover:text-[#888]')}
@@ -58,6 +64,8 @@ export default function MarketScreener() {
   return (
     <TerminalCard
       title="Screener rynku"
+      badge={data.length === 0 ? 'ŁADOWANIE' : hasDemoData ? 'CZĘŚĆ DEMO' : hasDelayedData ? 'OPÓŹN.' : 'LIVE'}
+      badgeColor={data.length === 0 ? 'muted' : hasDemoData || hasDelayedData ? 'amber' : 'green'}
       className="h-full"
       action={
         <div className="flex gap-px">
@@ -110,6 +118,7 @@ export default function MarketScreener() {
               return (
                 <tr key={item.symbol}
                     onClick={() => setSelectedSymbol(item.symbol, item.type)}
+                    title={item.source}
                     className={clsx('border-b border-[#0d0d0d] cursor-pointer tr-hover', isSelected ? 'bg-[#0d1a0d]' : 'hover:bg-[#0f0f0f]')}>
                   <td className="px-2 py-1">
                     <div className="flex items-center gap-1">

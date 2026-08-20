@@ -86,6 +86,8 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<AssetPrice[]
         marketCap: d.usd_market_cap ?? 0,
         type: 'crypto' as const,
         lastUpdated: new Date().toISOString(),
+        source: 'CoinGecko',
+        quality: 'live' as const,
       }
     })
     .filter(Boolean) as AssetPrice[]
@@ -114,5 +116,8 @@ export async function fetchCryptoOHLC(symbol: string, days = 30): Promise<OHLCBa
       high,
       low,
       close,
+      source: 'CoinGecko',
+      quality: 'live' as const,
+      lastUpdated: new Date().toISOString(),
     }))
 }

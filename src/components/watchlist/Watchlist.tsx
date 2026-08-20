@@ -8,7 +8,11 @@ import type { AssetPrice, WatchlistEntry } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { SkeletonBlock } from '@/components/ui/Skeleton'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 function fmtPnl(val: number): string {
   if (!isFinite(val)) return '—'
@@ -54,6 +58,10 @@ export default function Watchlist() {
   )
 
   const priceMap = Object.fromEntries(prices.map(p => [p.symbol, p]))
+  const hasDemoPrices = prices.some(price => price.quality === 'demo')
+  const hasDelayedPrices = prices.some(price => price.quality === 'delayed')
+  const qualityBadge = prices.length === 0 ? 'ŁADOWANIE' : hasDemoPrices ? 'CZĘŚĆ DEMO' : hasDelayedPrices ? 'OPÓŹN.' : 'LIVE'
+  const qualityColor = prices.length === 0 ? 'muted' : hasDemoPrices || hasDelayedPrices ? 'amber' : 'green'
   const maxVol = Math.max(...prices.map(p => isFinite(p.volume24h) ? p.volume24h : 0), 1)
 
   // Portfolio totals — wait for all position prices before computing P&L
@@ -72,8 +80,8 @@ export default function Watchlist() {
   return (
     <TerminalCard
       title="Watchlista"
-      badge="LIVE"
-      badgeColor="green"
+      badge={qualityBadge}
+      badgeColor={qualityColor}
       className="h-full"
     >
       {pricesError ? (
@@ -159,10 +167,11 @@ export default function Watchlist() {
                       {p ? `${p.changePercent24h >= 0 ? '+' : ''}${p.changePercent24h.toFixed(2)}%` : '—'}
                     </span>
                   )}
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                     <button
                       onClick={e => { e.stopPropagation(); setEditingSymbol(s => s === entry.symbol ? null : entry.symbol) }}
                       title="Ustaw pozycję"
+                      aria-label={`Ustaw pozycję ${entry.symbol}`}
                       className="text-[10px] text-[#555] hover:text-[#ffaa00] transition-colors leading-none px-0.5"
                     >
                       ✎
@@ -170,6 +179,7 @@ export default function Watchlist() {
                     <button
                       onClick={e => { e.stopPropagation(); removeFromWatchlist(entry.symbol) }}
                       title={`Usuń ${entry.symbol}`}
+                      aria-label={`Usuń ${entry.symbol}`}
                       className="text-[10px] text-[#333] hover:text-[#ff0040] transition-colors leading-none px-0.5"
                     >
                       ✕

@@ -1,7 +1,7 @@
 'use client'
 import useSWR from 'swr'
 import { clsx } from 'clsx'
-import type { AssetPrice } from '@/types'
+import type { AssetPrice, MarketIndex } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { formatPrice, formatVolume } from '@/lib/utils/formatters'
 import { SkeletonBlock } from '@/components/ui/Skeleton'
@@ -10,15 +10,13 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 const OVERVIEW_SYMBOLS = 'BTC:crypto,ETH:crypto,SOL:crypto,AAPL:stock,NVDA:stock,MSFT:stock'
 
-interface IndexRow { symbol: string; name: string; value: number; change: number; pct: number }
-
 export default function MarketOverview() {
   const { data: prices = [], isLoading: pricesLoading } = useSWR<AssetPrice[]>(
     `/api/prices?symbols=${OVERVIEW_SYMBOLS}`,
     fetcher,
     { refreshInterval: 30000, revalidateOnFocus: false }
   )
-  const { data: indices = [] } = useSWR<IndexRow[]>('/api/indices', fetcher, { refreshInterval: 60000, revalidateOnFocus: false })
+  const { data: indices = [] } = useSWR<MarketIndex[]>('/api/indices', fetcher, { refreshInterval: 60000, revalidateOnFocus: false })
   const { data: fngData } = useSWR<{ value: number; label: string }>(
     '/api/fng', fetcher, { refreshInterval: 3600000, revalidateOnFocus: false }
   )
@@ -30,9 +28,18 @@ export default function MarketOverview() {
 
   const fg = fngData?.value ?? 0
   const fgLabel = fngData?.label ?? '...'
+  const qualities = [...prices.map(price => price.quality), ...indices.map(index => index.quality)]
+  const hasDemoData = qualities.includes('demo')
+  const hasDelayedData = qualities.includes('delayed')
+  const badge = hasDemoData ? 'CZĘŚĆ DEMO' : hasDelayedData ? 'OPÓŹN.' : prices.length || indices.length ? 'LIVE' : undefined
 
   return (
-    <TerminalCard title="Rynek globalny" className="h-full">
+    <TerminalCard
+      title="Rynek globalny"
+      badge={badge}
+      badgeColor={hasDemoData || hasDelayedData ? 'amber' : 'green'}
+      className="h-full"
+    >
       <div className="overflow-auto h-full">
 
         {/* Indices table */}
@@ -44,7 +51,11 @@ export default function MarketOverview() {
             const pos = idx.pct >= 0
             const decimals = idx.value < 10 ? 4 : idx.value < 1000 ? 2 : 0
             return (
-              <div key={idx.symbol} className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
+              <div
+                key={idx.symbol}
+                className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]"
+                title={`${idx.source ?? 'Nieznane źródło'}${idx.lastUpdated ? ` · ${new Date(idx.lastUpdated).toLocaleTimeString('pl-PL')}` : ''}`}
+              >
                 <span className="text-[#888]">{idx.symbol}</span>
                 <div className="flex items-center gap-3">
                   <span className="num text-[#c8c8c8]">{idx.value.toLocaleString('pl-PL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
@@ -136,7 +147,10 @@ export default function MarketOverview() {
 
 function AssetRow({ asset }: { asset: AssetPrice }) {
   return (
-    <div className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]">
+    <div
+      className="flex items-center justify-between px-2 py-1 border-b border-[#0f0f0f] hover:bg-[#0f0f0f] text-[10px]"
+      title={`${asset.source ?? 'Nieznane źródło'} · ${new Date(asset.lastUpdated).toLocaleTimeString('pl-PL')}`}
+    >
       <div>
         <span className="font-bold text-[#ffaa00]">{asset.symbol}</span>
         {asset.marketCap > 0 && (

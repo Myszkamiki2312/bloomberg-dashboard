@@ -6,6 +6,11 @@
 
 * { box-sizing: border-box; }
 
+:focus-visible {
+  outline: 1px solid #ffaa00;
+  outline-offset: 2px;
+}
+
 html, body {
   background-color: #080808;
   color: #c8c8c8;
@@ -149,3 +154,35 @@ body::before {
 
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+@media (max-width: 1199px) {
+  html, body { overflow: hidden; }
+  body::before { opacity: 0.45; }
+}
+
+@media (max-width: 639px) {
+  .compact-dashboard .terminal-card-header {
+    height: auto !important;
+    min-height: 28px;
+    align-items: flex-start;
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  .compact-dashboard .terminal-card-actions {
+    max-width: 55%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .ticker-inner { transform: none !important; }
+  .scanline { display: none; }
+}

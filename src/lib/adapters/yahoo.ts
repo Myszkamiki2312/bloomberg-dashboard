@@ -68,6 +68,8 @@ export async function fetchYahooQuote(symbol: string): Promise<AssetPrice | null
       marketCap: 0,
       type: 'stock',
       lastUpdated: new Date().toISOString(),
+      source: 'Yahoo Finance',
+      quality: 'delayed',
     }
   } catch {
     return null
@@ -96,6 +98,9 @@ export async function fetchYahooOHLC(symbol: string, days = 90): Promise<OHLCBar
           low:    quote.low?.[i]    ?? 0,
           close:  quote.close?.[i]  ?? 0,
           volume: quote.volume?.[i] ?? 0,
+          source: 'Yahoo Finance',
+          quality: 'delayed' as const,
+          lastUpdated: new Date().toISOString(),
         }
       })
       .filter((b): b is NonNullable<typeof b> => b !== null && b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0)

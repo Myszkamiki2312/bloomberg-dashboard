@@ -6,7 +6,11 @@ import TerminalCard from '@/components/ui/TerminalCard'
 import { formatRelativeTime } from '@/lib/utils/formatters'
 import { SkeletonNewsItem } from '@/components/ui/Skeleton'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   makro: 'text-[#ffaa00] border-[#ffaa00]',
@@ -17,17 +21,24 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function NewsPanel() {
-  const { data: news = [], isLoading } = useSWR<NewsItem[]>('/api/news', fetcher, {
+  const { data: news = [], isLoading, error } = useSWR<NewsItem[]>('/api/news', fetcher, {
     refreshInterval: 300000,
     revalidateOnFocus: false,
   })
 
   return (
-    <TerminalCard title="Wiadomości" badge="RSS" badgeColor="amber" className="h-full">
+    <TerminalCard
+      title="Wiadomości"
+      badge={news.some(item => item.source.includes('(DEMO)')) ? 'DEMO' : 'RSS'}
+      badgeColor={news.some(item => item.source.includes('(DEMO)')) ? 'muted' : 'amber'}
+      className="h-full"
+    >
       {isLoading && !news.length ? (
         <div className="flex flex-col">
           {Array.from({ length: 7 }).map((_, i) => <SkeletonNewsItem key={i} />)}
         </div>
+      ) : error ? (
+        <div className="p-3 text-[#ff0040] text-[10px]">⚠ Nie udało się pobrać wiadomości.</div>
       ) : (
         <div className="flex flex-col divide-y divide-[#1c1c1c] overflow-auto">
           {news.map(item => (

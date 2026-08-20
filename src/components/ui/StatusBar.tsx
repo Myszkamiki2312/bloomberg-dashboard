@@ -2,25 +2,19 @@
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { clsx } from 'clsx'
-
-interface IndexQuote {
-  symbol: string
-  name: string
-  value: number
-  change: number
-  pct: number
-}
+import type { MarketIndex } from '@/types'
+import { getNyseSession, type NyseSession } from '@/lib/utils/marketHours'
 
 // Fallback skeleton — mirrors INDICES config in /api/indices/route.ts
-const BASE_INDICES: IndexQuote[] = [
-  { symbol: 'SPX',    name: 'S&P 500',  value: 5840.3,  change:  18.4,   pct:  0.32 },
-  { symbol: 'NDX',    name: 'NASDAQ',   value: 18950.6, change:  75.2,   pct:  0.40 },
-  { symbol: 'DJI',    name: 'DJIA',     value: 43250.8, change:  89.5,   pct:  0.21 },
-  { symbol: 'VIX',    name: 'VIX',      value: 18.40,   change:  -0.64,  pct: -3.36 },
-  { symbol: 'USDPLN', name: 'USD/PLN',  value: 3.7850,  change:  -0.011, pct: -0.29 },
-  { symbol: 'EURUSD', name: 'EUR/USD',  value: 1.1320,  change:   0.003, pct:  0.27 },
-  { symbol: 'GOLD',   name: 'GOLD',     value: 3320.0,  change:  12.4,   pct:  0.37 },
-  { symbol: 'OIL',    name: 'WTI/bbl',  value: 73.50,   change:  -0.82,  pct: -1.10 },
+const EMPTY_INDICES: MarketIndex[] = [
+  { symbol: 'SPX', name: 'S&P 500', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'NDX', name: 'NASDAQ', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'DJI', name: 'DJIA', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'VIX', name: 'VIX', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'USDPLN', name: 'USD/PLN', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'EURUSD', name: 'EUR/USD', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'GOLD', name: 'GOLD', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'OIL', name: 'WTI/bbl', value: NaN, change: NaN, pct: NaN },
 ]
 
 interface Clock { label: string; tz: string }
@@ -31,15 +25,26 @@ const CLOCKS: Clock[] = [
   { label: 'TOK', tz: 'Asia/Tokyo' },
 ]
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
+
+const SESSION_LABELS: Record<NyseSession, string> = {
+  open: 'NYSE OTWARTA',
+  'pre-market': 'NYSE PRE',
+  'after-hours': 'NYSE AFTER',
+  closed: 'NYSE ZAMKNIĘTA',
+  holiday: 'NYSE ŚWIĘTO',
+}
 
 export default function StatusBar({ isDemo }: { isDemo: boolean }) {
   const [times, setTimes] = useState<string[]>([])
-  const [marketOpen, setMarketOpen] = useState(false)
-  const [tick, setTick] = useState(0)
+  const [session, setSession] = useState<NyseSession>('closed')
 
   // Same key as MarketOverview — SWR deduplicates the request
-  const { data: liveIndices } = useSWR<IndexQuote[]>('/api/indices', fetcher, {
+  const { data: liveIndices, error } = useSWR<MarketIndex[]>('/api/indices', fetcher, {
     refreshInterval: 60000,
     revalidateOnFocus: false,
   })
@@ -50,44 +55,43 @@ export default function StatusBar({ isDemo }: { isDemo: boolean }) {
       setTimes(CLOCKS.map(c =>
         now.toLocaleTimeString('pl-PL', { timeZone: c.tz, hour: '2-digit', minute: '2-digit' })
       ))
-      const h = now.getUTCHours()
-      const d = now.getUTCDay()
-      setMarketOpen(d > 0 && d < 6 && h >= 13 && h < 21)
-      setTick(t => t + 1)
+      setSession(getNyseSession(now))
     }
     update()
     const t = setInterval(update, 5000)
     return () => clearInterval(t)
   }, [])
 
-  // Use real data when available; animate fallback skeleton while loading
-  const indices = liveIndices && liveIndices.length > 0
-    ? liveIndices
-    : BASE_INDICES.map((idx, i) => {
-        const phase = i * 2.399
-        const freq  = 0.15 + i * 0.07
-        const drift = Math.sin(tick * freq + phase) * idx.value * 0.00015
-        return { ...idx, value: idx.value + drift }
-      })
+  const indices = liveIndices?.length ? liveIndices : EMPTY_INDICES
+  const demoCount = liveIndices?.filter(index => index.quality === 'demo').length ?? 0
+  const hasDemoData = isDemo || demoCount > 0
+  const dataBadge = error
+    ? { label: 'BRAK DANYCH', color: 'text-[#ff0040] border-[#ff0040]' }
+    : hasDemoData
+      ? { label: demoCount > 0 && demoCount < indices.length ? 'CZĘŚĆ DEMO' : 'DEMO', color: 'text-[#ffaa00] border-[#ffaa00]' }
+      : liveIndices?.length
+        ? { label: 'OPÓŹNIONE', color: 'text-[#ffaa00] border-[#ffaa00]' }
+        : { label: 'ŁADOWANIE', color: 'text-[#555] border-[#333]' }
+  const marketOpen = session === 'open'
+  const sessionActive = session === 'pre-market' || session === 'after-hours'
 
   return (
-    <div className="flex items-center justify-between bg-black border-b border-[#1c1c1c] px-2 shrink-0" style={{ height: 26 }}>
+    <div className="flex items-center justify-between gap-2 bg-black border-b border-[#1c1c1c] px-2 shrink-0 overflow-hidden" style={{ height: 26 }}>
       {/* Left: brand + demo badge */}
       <div className="flex items-center gap-2 shrink-0">
         <span className="text-[11px] font-bold text-[#ffaa00] tracking-[0.2em]">BLOOMBERG</span>
         <span className="text-[11px] font-bold text-[#666]">DASHBOARD</span>
-        {isDemo && (
-          <span className="border border-[#ffaa00] text-[#ffaa00] text-[9px] font-bold px-1 py-px tracking-widest blink">
-            DEMO
-          </span>
-        )}
+        <span className={clsx('border text-[9px] font-bold px-1 py-px tracking-widest', dataBadge.color)}>
+          {dataBadge.label}
+        </span>
       </div>
 
       {/* Center: market indices */}
-      <div className="flex items-center gap-0 overflow-hidden">
+      <div className="flex flex-1 items-center gap-0 overflow-x-auto min-w-0">
         {indices.map((idx, i) => (
           <div
             key={idx.symbol}
+            title={`${idx.name}${idx.source ? ` · ${idx.source}` : ''}${idx.lastUpdated ? ` · ${new Date(idx.lastUpdated).toLocaleTimeString('pl-PL')}` : ''}`}
             className={clsx(
               'flex items-center gap-1 px-2 border-l border-[#1c1c1c] text-[10px] shrink-0',
               i === 0 && 'border-l-0'
@@ -95,21 +99,21 @@ export default function StatusBar({ isDemo }: { isDemo: boolean }) {
           >
             <span className="text-[#888] font-bold">{idx.symbol}</span>
             <span className="num text-[#c8c8c8]">
-              {idx.value < 10
+              {!Number.isFinite(idx.value) ? '—' : idx.value < 10
                 ? idx.value.toFixed(3)
                 : idx.value < 1000
                   ? idx.value.toFixed(2)
                   : idx.value.toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
-            <span className={clsx('num font-bold', idx.pct >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-              {idx.pct >= 0 ? '+' : ''}{idx.pct.toFixed(2)}%
+            <span className={clsx('num font-bold', !Number.isFinite(idx.pct) ? 'text-[#444]' : idx.pct >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+              {Number.isFinite(idx.pct) ? `${idx.pct >= 0 ? '+' : ''}${idx.pct.toFixed(2)}%` : '—'}
             </span>
           </div>
         ))}
       </div>
 
       {/* Right: clocks + market status */}
-      <div className="flex items-center gap-0 shrink-0">
+      <div className="hidden min-[1180px]:flex items-center gap-0 shrink-0">
         {CLOCKS.map((c, i) => (
           <div key={c.label} className="flex items-center gap-1 px-2 border-l border-[#1c1c1c] text-[10px]">
             <span className="text-[#555] font-bold">{c.label}</span>
@@ -117,9 +121,9 @@ export default function StatusBar({ isDemo }: { isDemo: boolean }) {
           </div>
         ))}
         <div className="flex items-center gap-1 px-2 border-l border-[#1c1c1c] text-[10px]">
-          <span className={clsx('blink', marketOpen ? 'text-[#00ff41]' : 'text-[#ff0040]')}>●</span>
-          <span className={clsx('font-bold', marketOpen ? 'text-[#00ff41]' : 'text-[#555]')}>
-            {marketOpen ? 'OTWARTY' : 'ZAMKNIĘTY'}
+          <span className={clsx('blink', marketOpen ? 'text-[#00ff41]' : sessionActive ? 'text-[#ffaa00]' : 'text-[#ff0040]')}>●</span>
+          <span className={clsx('font-bold', marketOpen ? 'text-[#00ff41]' : sessionActive ? 'text-[#ffaa00]' : 'text-[#555]')}>
+            {SESSION_LABELS[session]}
           </span>
         </div>
       </div>

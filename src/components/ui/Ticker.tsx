@@ -42,7 +42,10 @@ export default function Ticker() {
       <div className="ticker-inner h-full items-center gap-0 text-[10px]" style={{ animationDuration: animDuration }}>
         {items.map((p, i) => (
           <span key={`${p.symbol}-${i}`} className="flex items-center shrink-0">
-            <span className="px-3 border-r border-[#1c1c1c] flex items-center gap-2">
+            <span
+              className="px-3 border-r border-[#1c1c1c] flex items-center gap-2"
+              title={`${p.source ?? 'Nieznane źródło'} · ${p.quality === 'demo' ? 'DEMO' : p.quality === 'delayed' ? 'OPÓŹNIONE' : 'LIVE'} · ${new Date(p.lastUpdated).toLocaleTimeString('pl-PL')}`}
+            >
               <span className={clsx(
                 'font-bold text-[9px] border px-0.5',
                 p.type === 'crypto' ? 'text-[#00cccc] border-[#00cccc]' : 'text-[#0099ff] border-[#0099ff]'

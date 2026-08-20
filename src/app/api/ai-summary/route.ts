@@ -1,15 +1,36 @@
 import { NextResponse } from 'next/server'
 import { getMockAISummary } from '@/lib/adapters/mock'
-import type { MarketSummary } from '@/types'
+import { getPrices } from '@/lib/adapters'
+import type { AssetPrice, MarketSummary } from '@/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-function buildPrompt(): string {
+const SUMMARY_SYMBOLS = [
+  { symbol: 'BTC', type: 'crypto' as const },
+  { symbol: 'ETH', type: 'crypto' as const },
+  { symbol: 'SOL', type: 'crypto' as const },
+  { symbol: 'AAPL', type: 'stock' as const },
+  { symbol: 'NVDA', type: 'stock' as const },
+  { symbol: 'MSFT', type: 'stock' as const },
+]
+
+function buildPrompt(prices: AssetPrice[]): string {
   const date = new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })
+  const snapshot = prices.map(({ symbol, price, changePercent24h, source, quality, lastUpdated }) => ({
+    symbol,
+    price,
+    changePercent24h,
+    source,
+    quality,
+    lastUpdated,
+  }))
   return (
     `Jesteś analitykiem rynku finansowego. Data: ${date}. ` +
-    'Na podstawie swojej wiedzy o aktualnych warunkach rynkowych, napisz krótkie podsumowanie nastrojów rynkowych po polsku. ' +
+    `Dostępny snapshot notowań: ${JSON.stringify(snapshot)}. ` +
+    'Napisz krótkie podsumowanie nastrojów rynkowych po polsku wyłącznie na podstawie tego snapshotu. ' +
+    'Nie podawaj poziomów, wydarzeń, prognoz ani faktów, których nie ma w danych wejściowych. ' +
+    'Jeżeli danych jest za mało, powiedz to wprost. ' +
     'Odpowiedz WYŁĄCZNIE jako obiekt JSON (bez markdown, bez komentarzy): ' +
     '{"sentiment":"bullish","sentimentScore":63,"summary":"2-3 zdania po polsku.",' +
     '"keyPoints":["punkt 1","punkt 2","punkt 3"],' +
@@ -17,22 +38,38 @@ function buildPrompt(): string {
     '{"name":"Energia","performance":0.3},{"name":"Finanse","performance":0.7},' +
     '{"name":"Zdrowie","performance":-0.2},{"name":"Przemysł","performance":0.4}]}. ' +
     'sentiment: bullish/bearish/neutral. sentimentScore: liczba 0-100. ' +
-    'performance: liczba dziesiętna (procent dzienny, np. 1.5 lub -0.8). ' +
-    'Uwzględnij: krypto (BTC, ETH), akcje US (S&P500, NASDAQ, główne spółki tech), Europa, surowce (złoto, ropa).'
+    'performance: liczba dziesiętna (procent dzienny, np. 1.5 lub -0.8). '
   )
+}
+
+async function loadPriceSnapshot(): Promise<AssetPrice[]> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      getPrices(SUMMARY_SYMBOLS),
+      new Promise<AssetPrice[]>(resolve => {
+        timeout = setTimeout(() => resolve([]), 4500)
+      }),
+    ])
+  } catch {
+    return []
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
 }
 
 export async function GET() {
   const groqKey      = process.env.GROQ_API_KEY
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
+  const prices = await loadPriceSnapshot()
 
   const AI_CACHE = { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
 
   // Kolejność: Groq (darmowy) → Anthropic → OpenAI → mock
   if (groqKey) {
     try {
-      return NextResponse.json(await fetchGroqSummary(groqKey), AI_CACHE)
+      return NextResponse.json(await fetchGroqSummary(groqKey, prices), AI_CACHE)
     } catch (err) {
       console.error('Groq error:', err)
     }
@@ -40,7 +77,7 @@ export async function GET() {
 
   if (anthropicKey) {
     try {
-      return NextResponse.json(await fetchAnthropicSummary(anthropicKey), AI_CACHE)
+      return NextResponse.json(await fetchAnthropicSummary(anthropicKey, prices), AI_CACHE)
     } catch (err) {
       console.error('Anthropic error:', err)
     }
@@ -48,13 +85,13 @@ export async function GET() {
 
   if (openaiKey) {
     try {
-      return NextResponse.json(await fetchOpenAISummary(openaiKey), AI_CACHE)
+      return NextResponse.json(await fetchOpenAISummary(openaiKey, prices), AI_CACHE)
     } catch (err) {
       console.error('OpenAI error:', err)
     }
   }
 
-  return NextResponse.json(getMockAISummary(), {
+  return NextResponse.json(getMockAISummary(prices.length ? prices : undefined), {
     headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
   })
 }
@@ -70,20 +107,20 @@ function extractJSON(text: string): unknown | null {
   return null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function validateSummary(obj: any): obj is MarketSummary {
+function validateSummary(obj: unknown): obj is MarketSummary {
+  if (typeof obj !== 'object' || obj === null) return false
+  const candidate = obj as Record<string, unknown>
   const validSentiments = ['bullish', 'bearish', 'neutral']
   return (
-    obj != null &&
-    typeof obj.summary === 'string' && obj.summary.length > 0 &&
-    validSentiments.includes(obj.sentiment as string) &&
-    typeof obj.sentimentScore === 'number' && isFinite(obj.sentimentScore) &&
-    Array.isArray(obj.keyPoints) &&
-    Array.isArray(obj.sectors)
+    typeof candidate.summary === 'string' && candidate.summary.length > 0 &&
+    validSentiments.includes(candidate.sentiment as string) &&
+    typeof candidate.sentimentScore === 'number' && isFinite(candidate.sentimentScore) &&
+    Array.isArray(candidate.keyPoints) &&
+    Array.isArray(candidate.sectors)
   )
 }
 
-async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
+async function fetchGroqSummary(apiKey: string, prices: AssetPrice[]): Promise<MarketSummary> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -94,7 +131,7 @@ async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
       model: 'llama-3.1-8b-instant',
       max_tokens: 600,
       temperature: 0.7,
-      messages: [{ role: 'user', content: buildPrompt() }],
+      messages: [{ role: 'user', content: buildPrompt(prices) }],
       response_format: { type: 'json_object' },
     }),
     signal: AbortSignal.timeout(12000),
@@ -107,10 +144,10 @@ async function fetchGroqSummary(apiKey: string): Promise<MarketSummary> {
   const parsed = extractJSON(content) as Record<string, unknown>
   if (!parsed) throw new Error('Groq: no valid JSON in response')
   if (!validateSummary(parsed)) throw new Error('Groq: response missing required fields')
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false, source: 'Groq + snapshot notowań' }
 }
 
-async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
+async function fetchAnthropicSummary(apiKey: string, prices: AssetPrice[]): Promise<MarketSummary> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -121,7 +158,7 @@ async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
-      messages: [{ role: 'user', content: buildPrompt() }],
+      messages: [{ role: 'user', content: buildPrompt(prices) }],
     }),
     signal: AbortSignal.timeout(12000),
   })
@@ -133,10 +170,10 @@ async function fetchAnthropicSummary(apiKey: string): Promise<MarketSummary> {
   const parsed = extractJSON(text) as Record<string, unknown>
   if (!parsed) throw new Error('Anthropic: no valid JSON in response')
   if (!validateSummary(parsed)) throw new Error('Anthropic: response missing required fields')
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false, source: 'Anthropic + snapshot notowań' }
 }
 
-async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
+async function fetchOpenAISummary(apiKey: string, prices: AssetPrice[]): Promise<MarketSummary> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -146,7 +183,7 @@ async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       max_tokens: 600,
-      messages: [{ role: 'user', content: buildPrompt() }],
+      messages: [{ role: 'user', content: buildPrompt(prices) }],
       response_format: { type: 'json_object' },
     }),
     signal: AbortSignal.timeout(12000),
@@ -159,5 +196,5 @@ async function fetchOpenAISummary(apiKey: string): Promise<MarketSummary> {
   const parsed = extractJSON(content) as Record<string, unknown>
   if (!parsed) throw new Error('OpenAI: no valid JSON in response')
   if (!validateSummary(parsed)) throw new Error('OpenAI: response missing required fields')
-  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false }
+  return { ...parsed, timestamp: new Date().toISOString(), isDemo: false, source: 'OpenAI + snapshot notowań' }
 }

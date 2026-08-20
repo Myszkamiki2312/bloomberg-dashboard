@@ -9,7 +9,6 @@ import FunctionBar from '@/components/ui/FunctionBar'
 import NewsTickerBar from '@/components/ui/NewsTickerBar'
 import KeyboardShortcuts from '@/components/ui/KeyboardShortcuts'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import SmallScreenWarning from '@/components/ui/SmallScreenWarning'
 
 const Watchlist       = dynamic(() => import('@/components/watchlist/Watchlist'),      { ssr: false })
 const CandlestickChart= dynamic(() => import('@/components/chart/CandlestickChart'),  { ssr: false })
@@ -60,13 +59,84 @@ const PANEL_IDS: Record<string, string> = {
 }
 
 const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div id={PANEL_IDS[label] ?? `p-${label}`} className="overflow-hidden bg-[#080808] h-full">
+  <div id={PANEL_IDS[label] ?? `p-${label}`} className="overflow-hidden bg-[#080808] h-full scroll-mt-14">
     <ErrorBoundary label={label}>{children}</ErrorBoundary>
   </div>
 )
 
+function useCompactLayout() {
+  const [compact, setCompact] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1199px)')
+    const update = () => setCompact(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return compact
+}
+
+const COMPACT_NAV = [
+  ['p-wykres', 'Wykres'],
+  ['p-watchlista', 'Watchlista'],
+  ['p-wiadomosci', 'News'],
+  ['p-screener', 'Screener'],
+  ['p-kalendarz', 'Kalendarz'],
+  ['p-alerty', 'Alerty'],
+]
+
+function CompactDashboard() {
+  return (
+    <main className="compact-dashboard flex-1 min-h-0 overflow-y-auto bg-[#080808]">
+      <nav className="sticky top-0 z-30 grid grid-cols-3 sm:grid-cols-6 border-b border-[#1c1c1c] bg-black/95 backdrop-blur-sm">
+        {COMPACT_NAV.map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="px-2 py-2 text-center text-[10px] font-bold text-[#777] hover:text-[#ffaa00] focus-visible:text-[#ffaa00] border-r border-[#1c1c1c]"
+          >
+            {label.toUpperCase()}
+          </a>
+        ))}
+      </nav>
+      <div className="px-2 py-1 text-[9px] text-[#555] border-b border-[#1c1c1c]">
+        TRYB KOMPAKTOWY · panele przewijają się pionowo
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
+        <section className="min-h-[440px] md:col-span-2 scroll-mt-14">
+          <P label="Wykres"><CandlestickChart /></P>
+        </section>
+        <section className="min-h-[430px] scroll-mt-14">
+          <P label="Watchlista"><Watchlist /></P>
+        </section>
+        <section className="min-h-[430px] scroll-mt-14">
+          <P label="Wiadomości"><NewsPanel /></P>
+        </section>
+        <section className="min-h-[390px]">
+          <P label="AI Podsumowanie"><AIMarketSummary /></P>
+        </section>
+        <section className="min-h-[390px]">
+          <P label="Rynek Globalny"><MarketOverview /></P>
+        </section>
+        <section className="min-h-[430px] md:col-span-2 scroll-mt-14">
+          <P label="Screener"><MarketScreener /></P>
+        </section>
+        <section className="min-h-[430px] scroll-mt-14">
+          <P label="Kalendarz"><EconomicCalendar /></P>
+        </section>
+        <section className="min-h-[430px] scroll-mt-14">
+          <P label="Alerty"><PriceAlerts /></P>
+        </section>
+      </div>
+    </main>
+  )
+}
+
 export default function Home() {
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const compact = useCompactLayout()
 
   useEffect(() => {
     const FN_MAP: Record<string, string> = {
@@ -96,15 +166,16 @@ export default function Home() {
 
   return (
     <>
-      <SmallScreenWarning />
       {showShortcuts && <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />}
 
-      <div className="flex flex-col h-screen overflow-hidden bg-[#080808]">
+      <div className="flex flex-col h-screen overflow-hidden bg-[#080808]" style={{ height: '100dvh' }}>
         <StatusBar isDemo={isDemo} />
         <Ticker />
 
-        {/* ── Outer vertical split: main ↕ bottom strip ── */}
-        <PanelGroup direction="vertical" className="flex-1 min-h-0" id="outer-layout">
+        {compact ? <CompactDashboard /> : (
+        <>
+          {/* ── Outer vertical split: main ↕ bottom strip ── */}
+          <PanelGroup direction="vertical" className="flex-1 min-h-0" id="outer-layout">
 
           {/* Main area */}
           <Panel defaultSize={72} minSize={40}>
@@ -158,10 +229,12 @@ export default function Home() {
             </PanelGroup>
           </Panel>
 
-        </PanelGroup>
+          </PanelGroup>
+        </>
+        )}
 
         <NewsTickerBar />
-        <FunctionBar onHelpOpen={() => setShowShortcuts(true)} />
+        {!compact && <FunctionBar onHelpOpen={() => setShowShortcuts(true)} />}
       </div>
     </>
   )

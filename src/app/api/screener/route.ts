@@ -4,7 +4,7 @@ import { getPrices } from '@/lib/adapters'
 import { fetchCryptoOHLC } from '@/lib/adapters/coingecko'
 import { fetchYahooOHLC } from '@/lib/adapters/yahoo'
 import { calculateRSI, getTrend, calculateVolatility } from '@/lib/utils/rsi'
-import type { ScreenerItem } from '@/types'
+import type { DataQuality, OHLCBar, ScreenerItem } from '@/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,20 +22,34 @@ const SCREENER_SYMBOLS = [
   { symbol: 'MSFT', type: 'stock'  as const },
 ]
 
-async function getRealOHLC(symbol: string, type: 'crypto' | 'stock'): Promise<number[]> {
-  if (DEMO_MODE) return getMockOHLC(symbol, 60).map(b => b.close)
+interface CloseSeries {
+  closes: number[]
+  quality: DataQuality
+  source: string
+}
+
+function toCloseSeries(bars: OHLCBar[]): CloseSeries {
+  return {
+    closes: bars.map(bar => bar.close),
+    quality: bars[0]?.quality ?? 'demo',
+    source: bars[0]?.source ?? 'Dane demonstracyjne',
+  }
+}
+
+async function getRealOHLC(symbol: string, type: 'crypto' | 'stock'): Promise<CloseSeries> {
+  if (DEMO_MODE) return toCloseSeries(getMockOHLC(symbol, 60))
   if (type === 'crypto') {
     try {
       const bars = await fetchCryptoOHLC(symbol, 30)
-      if (bars.length >= 15) return bars.map(b => b.close)
+      if (bars.length >= 15) return toCloseSeries(bars)
     } catch {}
   } else {
     try {
       const bars = await fetchYahooOHLC(symbol, 90)
-      if (bars.length >= 15) return bars.map(b => b.close)
+      if (bars.length >= 15) return toCloseSeries(bars)
     } catch {}
   }
-  return getMockOHLC(symbol, 60).map(b => b.close)
+  return toCloseSeries(getMockOHLC(symbol, 60))
 }
 
 export async function GET() {
@@ -56,9 +70,14 @@ export async function GET() {
     const asset = live ?? mock
     if (!asset) return null
 
-    const closes = ohlcvResults[i].status === 'fulfilled'
+    const series = ohlcvResults[i].status === 'fulfilled'
       ? ohlcvResults[i].value
-      : getMockOHLC(symbol, 60).map(b => b.close)
+      : toCloseSeries(getMockOHLC(symbol, 60))
+    const quality: DataQuality = asset.quality === 'demo' || series.quality === 'demo'
+      ? 'demo'
+      : asset.quality === 'delayed' || series.quality === 'delayed'
+        ? 'delayed'
+        : 'live'
 
     return {
       symbol: asset.symbol,
@@ -66,10 +85,12 @@ export async function GET() {
       price: asset.price,
       change: asset.changePercent24h,
       volume: asset.volume24h,
-      rsi: calculateRSI(closes),
-      trend: getTrend(closes),
-      volatility: calculateVolatility(closes),
+      rsi: calculateRSI(series.closes),
+      trend: getTrend(series.closes),
+      volatility: calculateVolatility(series.closes),
       type,
+      quality,
+      source: `Cena: ${asset.source ?? 'nieznane'} · historia: ${series.source}`,
     }
   })
 

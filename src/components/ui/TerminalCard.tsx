@@ -35,16 +35,22 @@ export default function TerminalCard({
   const [minimized, setMinimized] = useState(false)
 
   return (
-    <div className={clsx('flex flex-col overflow-hidden bg-[#080808]', className)}>
+    <div className={clsx('terminal-card flex flex-col overflow-hidden bg-[#080808]', className)}>
       {/* Panel header */}
       <div
-        className="flex items-center justify-between border-b border-[#1c1c1c] px-2 shrink-0 select-none"
+        className="terminal-card-header flex items-center justify-between border-b border-[#1c1c1c] px-2 shrink-0 select-none"
         style={{ height: 22 }}
       >
-        <div
-          className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+        <button
+          type="button"
+          className={clsx(
+            'flex items-center gap-2 flex-1 min-w-0 text-left',
+            minimizable ? 'cursor-pointer' : 'cursor-default'
+          )}
           onClick={() => minimizable && setMinimized(m => !m)}
           title={minimizable ? (minimized ? 'Rozwiń panel' : 'Minimalizuj panel') : undefined}
+          aria-expanded={!minimized}
+          disabled={!minimizable}
         >
           <span className="text-[#333] text-[10px]">▌</span>
           <span className="text-[10px] font-bold tracking-[0.15em] text-[#ffaa00] uppercase truncate">
@@ -55,15 +61,17 @@ export default function TerminalCard({
               {badge}
             </span>
           )}
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
+        </button>
+        <div className="terminal-card-actions flex items-center gap-1 shrink-0">
           {headerRight}
           {action}
           {minimizable && (
             <button
+              type="button"
               onClick={() => setMinimized(m => !m)}
               className="text-[#444] hover:text-[#ffaa00] transition-colors text-[11px] w-5 text-center leading-none ml-1"
               title={minimized ? 'Rozwiń' : 'Minimalizuj'}
+              aria-label={minimized ? `Rozwiń panel ${title}` : `Minimalizuj panel ${title}`}
             >
               {minimized ? '▲' : '▼'}
             </button>

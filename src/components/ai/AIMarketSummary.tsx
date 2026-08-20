@@ -4,7 +4,11 @@ import { clsx } from 'clsx'
 import type { MarketSummary } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 const SENTIMENT_CONFIG = {
   bullish: { label: '▲ BYCZY', color: 'text-[#00ff41]', barColor: 'bg-[#00ff41]' },
@@ -40,6 +44,14 @@ export default function AIMarketSummary() {
         </div>
       ) : data ? (
         <div className="flex flex-col gap-0 overflow-auto">
+          <div className="px-3 py-1 border-b border-[#1c1c1c] text-[9px] text-[#555] flex items-center justify-between gap-2">
+            <span className={data.isDemo ? 'text-[#ffaa00]' : 'text-[#00cccc]'}>
+              {data.isDemo ? 'Podsumowanie regułowe — bez modelu AI' : 'Analiza uziemiona w snapshotcie notowań'}
+            </span>
+            <span title={new Date(data.timestamp).toLocaleString('pl-PL')}>
+              {new Date(data.timestamp).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
           <div className="px-3 py-2 border-b border-[#1c1c1c]">
             <div className="flex items-center justify-between mb-1.5">
               <span className={clsx('text-sm font-bold', cfg.color)}>{cfg.label}</span>
@@ -100,6 +112,11 @@ export default function AIMarketSummary() {
                   )
                 })}
               </div>
+            </div>
+          )}
+          {data.source && (
+            <div className="px-3 py-1 border-t border-[#1c1c1c] text-[9px] text-[#444]">
+              Źródło: {data.source}
             </div>
           )}
         </div>

@@ -32,6 +32,9 @@ function generateOHLC(basePrice: number, days: number, seed = 42): OHLCBar[] {
       low: Math.round(low * 100) / 100,
       close: Math.round(close * 100) / 100,
       volume: Math.round(rng() * 50000000 + 10000000),
+      source: 'Dane demonstracyjne',
+      quality: 'demo',
+      lastUpdated: new Date().toISOString(),
     })
     price = close
   }
@@ -51,7 +54,12 @@ const MOCK_PRICES_BASE = [
 
 export function getMockPrices(): AssetPrice[] {
   const now = new Date().toISOString()
-  return MOCK_PRICES_BASE.map(p => ({ ...p, lastUpdated: now }))
+  return MOCK_PRICES_BASE.map(p => ({
+    ...p,
+    lastUpdated: now,
+    source: 'Dane demonstracyjne',
+    quality: 'demo',
+  }))
 }
 
 const BASE_PRICES: Record<string, number> = {
@@ -106,25 +114,47 @@ const CALENDAR_BASE: CalendarBase[] = [
 ]
 
 export function getMockCalendar(): EconomicEvent[] {
-  const now = Date.now()
+  const today = new Date()
+  today.setHours(12, 0, 0, 0)
+  const businessDays: Date[] = []
+  const cursor = new Date(today)
+
+  while (businessDays.length < 6) {
+    const weekday = cursor.getDay()
+    if (weekday !== 0 && weekday !== 6) businessDays.push(new Date(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
   return CALENDAR_BASE.map(({ daysFromNow, ...rest }) => ({
     ...rest,
-    date: new Date(now + daysFromNow * 86400000).toISOString().split('T')[0],
+    date: businessDays[Math.min(daysFromNow, businessDays.length - 1)].toISOString().split('T')[0],
   }))
 }
 
-export function getMockAISummary(): MarketSummary {
+export function getMockAISummary(prices: AssetPrice[] = getMockPrices()): MarketSummary {
+  const usable = prices.filter(price => Number.isFinite(price.price) && price.price > 0)
+  const bySymbol = Object.fromEntries(usable.map(price => [price.symbol, price]))
+  const btc = bySymbol.BTC
+  const strongest = [...usable].sort((a, b) => b.changePercent24h - a.changePercent24h)[0]
+  const weakest = [...usable].sort((a, b) => a.changePercent24h - b.changePercent24h)[0]
+  const averageChange = usable.length
+    ? usable.reduce((sum, price) => sum + price.changePercent24h, 0) / usable.length
+    : 0
+  const sentiment: MarketSummary['sentiment'] = averageChange > 1 ? 'bullish' : averageChange < -1 ? 'bearish' : 'neutral'
+  const sentimentScore = Math.round(Math.max(0, Math.min(100, 50 + averageChange * 8)))
+  const format = (value: number) => value.toLocaleString('pl-PL', { maximumFractionDigits: value < 10 ? 2 : 0 })
+
   return {
-    sentiment: 'neutral',
-    sentimentScore: 48,
-    summary:
-      'Korekta na rynkach krypto — Bitcoin cofa się do okolic 79 000 USD po wcześniejszych wzrostach. Akcje US stabilne dzięki silnym wynikom sektora technologicznego. Złoto rekordowe powyżej 3 200 USD, odzwierciedlając obawy o inflację i napięcia geopolityczne.',
+    sentiment,
+    sentimentScore,
+    summary: usable.length
+      ? `To podsumowanie demonstracyjne jest wyliczone z aktualnie dostępnych notowań, a nie wygenerowane przez model AI. Średnia zmiana obserwowanych aktywów wynosi ${averageChange >= 0 ? '+' : ''}${averageChange.toFixed(2)}% w ciągu ostatnich 24 godzin.`
+      : 'Brak aktualnych notowań. Podsumowanie demonstracyjne nie zawiera prognozy rynku.',
     keyPoints: [
-      'Bitcoin testuje wsparcie w okolicy 79 000 USD po korekcie',
-      'NVIDIA napędza wzrosty AI — kapitalizacja powyżej 5,7 bln USD',
-      'Złoto > 3 200 USD/oz — historyczny szczyt, popyt banków centralnych silny',
-      'S&P 500 blisko historycznych maksimów mimo zmienności',
-      'Fed: ostrożność wobec inflacji, rynek wycenia 1 obniżkę w 2025',
+      btc ? `Bitcoin: ${format(btc.price)} USD (${btc.changePercent24h >= 0 ? '+' : ''}${btc.changePercent24h.toFixed(2)}%)` : 'Bitcoin: brak aktualnego notowania',
+      strongest ? `Najsilniejszy ruch: ${strongest.symbol} ${strongest.changePercent24h >= 0 ? '+' : ''}${strongest.changePercent24h.toFixed(2)}%` : 'Brak danych o zmianach',
+      weakest ? `Najsłabszy ruch: ${weakest.symbol} ${weakest.changePercent24h >= 0 ? '+' : ''}${weakest.changePercent24h.toFixed(2)}%` : 'Brak danych o zmianach',
+      'Tryb DEMO nie stanowi analizy ani rekomendacji inwestycyjnej.',
     ],
     sectors: [
       { name: 'Technologia', performance: 1.2 },
@@ -136,5 +166,6 @@ export function getMockAISummary(): MarketSummary {
     ],
     timestamp: new Date().toISOString(),
     isDemo: true,
+    source: 'Reguły demo + dostępne notowania',
   }
 }

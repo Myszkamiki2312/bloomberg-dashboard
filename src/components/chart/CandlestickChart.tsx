@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import type { IChartApi, ISeriesApi } from 'lightweight-charts'
 import { useStore } from '@/lib/store/useStore'
@@ -8,7 +8,11 @@ import TerminalCard from '@/components/ui/TerminalCard'
 import { formatPrice } from '@/lib/utils/formatters'
 import { clsx } from 'clsx'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 function cleanBars(data: OHLCBar[]): OHLCBar[] {
   if (!data.length) return []
@@ -59,7 +63,7 @@ export default function CandlestickChart() {
     if (clearing && data !== undefined) setClearing(false)
   }, [data, clearing])
 
-  const displayData = clearing || !data ? [] : data
+  const displayData = useMemo(() => clearing || !data ? [] : data, [clearing, data])
 
   useEffect(() => {
     if (!chartRef.current) return
@@ -181,12 +185,15 @@ export default function CandlestickChart() {
     ? ((lastBar.close - firstBar.close) / firstBar.close) * 100
     : 0
   const isUp = overallChange >= 0
+  const chartQuality = chartBars[0]?.quality
+  const qualityLabel = chartQuality === 'demo' ? 'DEMO' : chartQuality === 'delayed' ? 'OPÓŹN.' : chartQuality === 'live' ? 'LIVE' : 'ŁADOWANIE'
+  const assetLabel = selectedType === 'crypto' ? 'KRYPTO' : 'AKCJA'
 
   return (
     <TerminalCard
       title={`Wykres: ${selectedSymbol}`}
-      badge={selectedType === 'crypto' ? 'KRYPTO' : 'AKCJA'}
-      badgeColor={selectedType === 'crypto' ? 'cyan' : 'blue'}
+      badge={`${assetLabel} · ${qualityLabel}`}
+      badgeColor={chartQuality === 'demo' || chartQuality === 'delayed' ? 'amber' : chartQuality === 'live' ? 'green' : 'muted'}
       className="h-full"
       action={
         <div className="flex gap-1">
@@ -222,6 +229,9 @@ export default function CandlestickChart() {
           <span className="text-[#444]">O <span className="text-[#666]">{formatPrice(lastBar.open)}</span></span>
           <span className="text-[#444]">H <span className="text-[#00ff41]">{formatPrice(lastBar.high)}</span></span>
           <span className="text-[#444]">L <span className="text-[#ff0040]">{formatPrice(lastBar.low)}</span></span>
+          <span className="ml-auto text-[9px] text-[#444]" title={lastBar.lastUpdated ? new Date(lastBar.lastUpdated).toLocaleString('pl-PL') : undefined}>
+            {lastBar.source ?? 'Nieznane źródło'}
+          </span>
         </div>
       )}
 

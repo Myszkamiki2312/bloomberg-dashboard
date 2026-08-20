@@ -8,7 +8,11 @@ export interface AssetPrice {
   marketCap: number
   type: 'stock' | 'crypto'
   lastUpdated: string
+  source?: string
+  quality?: DataQuality
 }
+
+export type DataQuality = 'live' | 'delayed' | 'demo'
 
 export interface OHLCBar {
   time: string
@@ -17,6 +21,9 @@ export interface OHLCBar {
   low: number
   close: number
   volume?: number
+  source?: string
+  quality?: DataQuality
+  lastUpdated?: string
 }
 
 export interface NewsItem {
@@ -49,6 +56,8 @@ export interface ScreenerItem {
   trend: 'bullish' | 'bearish' | 'neutral'
   volatility: number
   type: 'stock' | 'crypto'
+  source?: string
+  quality?: DataQuality
 }
 
 export interface EconomicEvent {
@@ -72,6 +81,7 @@ export interface MarketSummary {
   sectors: { name: string; performance: number }[]
   timestamp: string
   isDemo: boolean
+  source?: string
 }
 
 export interface WatchlistEntry {
@@ -88,5 +98,8 @@ export interface MarketIndex {
   name: string
   value: number
   change: number
-  changePercent: number
+  pct: number
+  lastUpdated?: string
+  source?: string
+  quality?: DataQuality
 }

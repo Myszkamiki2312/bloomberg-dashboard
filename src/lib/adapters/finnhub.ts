@@ -32,6 +32,8 @@ export async function fetchStockQuote(symbol: string): Promise<AssetPrice | null
     marketCap: profile.marketCapitalization ? profile.marketCapitalization * 1e6 : 0,
     type: 'stock',
     lastUpdated: new Date().toISOString(),
+    source: 'Finnhub',
+    quality: 'live',
   }
 }
 
@@ -61,6 +63,9 @@ export async function fetchStockOHLC(symbol: string, days = 90): Promise<OHLCBar
         time: new Date(ts * 1000).toISOString().split('T')[0],
         open, high, low, close,
         volume: data.v?.[i] as number | undefined,
+        source: 'Finnhub',
+        quality: 'live',
+        lastUpdated: new Date().toISOString(),
       })
     }
     return acc

@@ -1,6 +1,6 @@
 # Bloomberg Dashboard
 
-Finansowy dashboard inspirowany Bloomberg Terminal — Next.js 14, TypeScript, Tailwind CSS. Ciemny styl terminalowy, dane real-time tam gdzie dostępne bezpłatnie, pełny tryb DEMO bez kluczy API.
+Finansowy dashboard inspirowany terminalami rynkowymi — Next.js 15, TypeScript, Tailwind CSS. Ciemny styl terminalowy, jawne oznaczenia jakości danych (`LIVE`, `OPÓŹNIONE`, `DEMO`) oraz bezkluczowe źródła z bezpiecznym fallbackiem demonstracyjnym.
 
 ---
 
@@ -29,14 +29,15 @@ Finansowy dashboard inspirowany Bloomberg Terminal — Next.js 14, TypeScript, T
 | **Ticker tape** | Scrollujący pasek cen u góry ekranu, auto-odświeżanie 30 s |
 | **Wiadomości** | Panel z newsami z Yahoo Finance RSS + fallback mock |
 | **Pasek newsów** | Scrollujące nagłówki na dole ekranu |
-| **Kalendarz ekonomiczny** | Nadchodzące zdarzenia makro z flagami ważności i prognozami |
+| **Kalendarz ekonomiczny** | Przykładowe zdarzenia makro, zawsze wyraźnie oznaczone jako DEMO |
 | **Alerty cenowe** | Alerty powyżej/poniżej ceny, persystentne w localStorage |
-| **AI Podsumowanie** | Analiza sentymentu rynku (Claude/OpenAI lub tryb mock) |
+| **AI Podsumowanie** | Analiza sentymentu uziemiona w bieżącym snapshotcie cen lub jawne podsumowanie regułowe DEMO |
 | **Screener rynku** | Tabela z wolumenem, RSI(14), mini-bar RSI, trendem, zmiennością |
 | **Przegląd rynku** | Indeksy globalne, dominacja BTC, Indeks Strachu & Chciwości |
 | **Status bar** | 8 indeksów rynkowych, 4 zegary stref czasowych, status giełdy |
 | **Panel skrótów** | Modal `?` z listą skrótów klawiszowych |
 | **Pasek funkcyjny** | Bloomberg-style F1–F8 + przycisk skrótów na dole |
+| **Tryb kompaktowy** | Pionowy układ z nawigacją dla telefonów, tabletów i wąskich okien |
 
 ---
 
@@ -54,7 +55,7 @@ npm install
 
 # 3. Skonfiguruj środowisko
 cp .env.example .env.local
-# Bez kluczy API — aplikacja automatycznie przełącza się na tryb DEMO
+# Bez kluczy API — aplikacja korzysta z dostępnych źródeł bezkluczowych
 
 # 4. Uruchom lokalnie
 npm run dev
@@ -75,7 +76,7 @@ Otwórz **http://localhost:3000**
 
 ## Tryb DEMO
 
-Gdy brak kluczy API lub połączenia z internetem, aplikacja działa w pełnym trybie DEMO z realistycznymi danymi mock.
+Gdy wszystkie źródła danego instrumentu zawiodą lub nie ma połączenia z internetem, aplikacja używa fallbacku DEMO. Dane przykładowe nie są prezentowane jako notowania live, a każdy panel pokazuje jakość i źródło użytych danych.
 
 Aby **wymusić** tryb DEMO niezależnie od kluczy:
 
@@ -85,8 +86,8 @@ NEXT_PUBLIC_DEMO_MODE=true
 ```
 
 Tryb DEMO aktywuje się automatycznie gdy:
-- Brak kluczy API w `.env.local`
-- API zwróci błąd (rate limit, awaria)
+- Wszystkie dostępne źródła zwrócą błąd lub nie znajdą symbolu
+- Wystąpi rate limit albo awaria połączenia
 - `NEXT_PUBLIC_DEMO_MODE=true`
 
 W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowanie, kalendarz, wiadomości.
@@ -94,6 +95,22 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 ---
 
 ## Źródła danych
+
+### Bieżące kursy — TradingView Scanner (nieoficjalny)
+
+- **Endpoint:** `https://scanner.tradingview.com/global/scan`
+- **Typ dostępu:** Bez klucza, wyłącznie server-side
+- **Zakres:** Bieżące kursy akcji, krypto, indeksów, FX i surowców
+
+TradingView jest pierwszym źródłem snapshotów cen. Każdy taki rekord jest oznaczony jako `OPÓŹNIONE` oraz ma źródło `TradingView Scanner — nieoficjalne`, niezależnie od trybu raportowanego przez endpoint. To nie jest oficjalne publiczne API danych TradingView, więc endpoint może zmienić się lub przestać działać bez ostrzeżenia. Wtedy aplikacja automatycznie przechodzi do CoinGecko, Finnhub, Yahoo Finance, a na końcu do danych DEMO.
+
+Adapter można wyłączyć bez zmian w kodzie:
+
+```env
+TRADINGVIEW_UNOFFICIAL_ENABLED=false
+```
+
+Dla spółek z GPW używaj symbolu Yahoo z sufiksem `.WA`, np. `CDR.WA` lub `PKN.WA`. Dane historyczne wykresów nadal pochodzą z CoinGecko, Finnhub albo Yahoo Finance.
 
 ### Ceny krypto — CoinGecko
 
@@ -166,7 +183,7 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 **Model:** `claude-haiku-4-5-20251001` (najtańszy)  
 **Co pobieramy:** Jedno zapytanie co 5 minut — analiza sentymentu rynku w języku polskim  
 **Koszt szacunkowy:** ~$0.001 per zapytanie (Haiku 4.5)  
-**Bez klucza:** Moduł działa w trybie mock z predefiniowaną analizą
+**Bez klucza:** Moduł pokazuje jawne podsumowanie regułowe wyliczone z dostępnego snapshotu cen, bez udawania odpowiedzi modelu AI.
 
 ---
 
@@ -174,7 +191,7 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 
 **Strona:** https://platform.openai.com  
 **Model:** `gpt-4o-mini`  
-**Bez klucza:** Tryb mock (tak samo jak Anthropic)
+**Bez klucza:** Podsumowanie regułowe DEMO (tak samo jak dla Anthropic)
 
 ---
 
@@ -182,7 +199,8 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 
 | Dane | Źródło | Odśw. |
 |------|--------|-------|
-| Indeksy globalne (SPX, NDX, VIX, DXY, GOLD, OIL…) | Yahoo Finance | 60 s |
+| Bieżące ceny akcji i krypto | TradingView Scanner (nieoficjalny), potem CoinGecko/Finnhub/Yahoo | 30 s |
+| Indeksy globalne (SPX, NDX, VIX, FX, GOLD, OIL…) | TradingView Scanner (nieoficjalny), potem Yahoo Finance | 60 s |
 | Indeks Strachu & Chciwości | Alternative.me (bezpłatny) | 1 h |
 | BTC dominacja + Total Market Cap | CoinGecko `/global` | 5 min |
 
@@ -207,6 +225,7 @@ cp .env.example .env.local
 
 | Zmienna | Gdzie uzyskać | Wymagane? |
 |---------|---------------|-----------|
+| `TRADINGVIEW_UNOFFICIAL_ENABLED` | — | Nie (`false` = wyłącz adapter) |
 | `COINGECKO_API_KEY` | https://www.coingecko.com/en/api | Nie (działa bez klucza) |
 | `FINNHUB_KEY` | https://finnhub.io/register | Zalecane dla akcji |
 | `GROQ_API_KEY` | https://console.groq.com | Zalecane dla AI (darmowy) |
@@ -471,6 +490,7 @@ bloomberg-dashboard/
     │   └── market/MarketOverview.tsx
     ├── lib/
     │   ├── adapters/
+    │   │   ├── tradingview.ts # Bieżące kursy z nieoficjalnego scannera
     │   │   ├── coingecko.ts   # Adapter CoinGecko API
     │   │   ├── finnhub.ts     # Adapter Finnhub API
     │   │   ├── yahoo.ts       # Adapter Yahoo Finance (unofficial)
@@ -489,9 +509,9 @@ bloomberg-dashboard/
 Przeglądarka
     │
     ├── SWR (co 30s) → /api/prices → adapters/index.ts
-    │                                    ├── CoinGecko (krypto)
-    │                                    ├── Finnhub (akcje)
-    │                                    ├── Yahoo Finance (fallback)
+    │                                    ├── TradingView Scanner (pierwszy wybór)
+    │                                    ├── CoinGecko/Finnhub (fallback)
+    │                                    ├── Yahoo Finance (fallback akcji)
     │                                    └── mock.ts (fallback końcowy)
     │
     ├── SWR (on-demand) → /api/chart → getOHLC()
