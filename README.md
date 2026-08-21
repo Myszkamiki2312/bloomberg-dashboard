@@ -24,12 +24,13 @@ Finansowy dashboard inspirowany terminalami rynkowymi — Next.js 15, TypeScript
 
 | Moduł | Opis |
 |-------|------|
+| **Portfel wielowalutowy** | Pozycje PLN/USD/EUR, historyczny kurs FX zakupu, wynik i P&L w wybranej walucie bazowej |
 | **Watchlista** | Lista obserwowanych aktywów (akcje + krypto), edytowalna, flash przy zmianie ceny |
 | **Wykres** | TradingView Lightweight Charts (Area), timeframe 1M/3M/6M/1Y, OHLC nagłówek |
 | **Ticker tape** | Scrollujący pasek cen u góry ekranu, auto-odświeżanie 30 s |
 | **Wiadomości** | Panel z newsami z Yahoo Finance RSS + fallback mock |
 | **Pasek newsów** | Scrollujące nagłówki na dole ekranu |
-| **Kalendarz ekonomiczny** | Bieżące wydarzenia TradingView w czasie warszawskim + wyraźny fallback DEMO |
+| **Kalendarz ekonomiczny** | Wydarzenia TradingView, polskie nazwy, filtry kraju i ważności + wyraźny fallback DEMO |
 | **Alerty cenowe** | Alerty powyżej/poniżej ceny, persystentne w localStorage |
 | **AI Podsumowanie** | Analiza sentymentu uziemiona w bieżącym snapshotcie cen lub jawne podsumowanie regułowe DEMO |
 | **Screener rynku** | Tabela z wolumenem, RSI(14), mini-bar RSI, trendem, zmiennością |
@@ -38,6 +39,16 @@ Finansowy dashboard inspirowany terminalami rynkowymi — Next.js 15, TypeScript
 | **Panel skrótów** | Modal `?` z listą skrótów klawiszowych |
 | **Pasek funkcyjny** | Bloomberg-style F1–F8 + przycisk skrótów na dole |
 | **Tryb kompaktowy** | Pionowy układ z nawigacją dla telefonów, tabletów i wąskich okien |
+| **Kopie portfela** | Eksport JSON/CSV, walidowany import JSON i opcjonalna synchronizacja przez Supabase |
+| **PWA** | Instalacja na telefonie/komputerze, shell offline i powiadomienia alertów przez service worker |
+
+### Waluty i obliczenia portfela
+
+- Waluta notowania jest pobierana razem z ceną instrumentu i widoczna w watchliście.
+- Bieżąca wartość pozycji jest przeliczana przez kurs `USDPLN` lub `EURPLN` z TradingView (z fallbackiem Yahoo/DEMO).
+- Koszt pozycji walutowej korzysta z kursu do PLN wpisanego przy zakupie. Dzięki temu wynik uwzględnia zarówno zmianę ceny instrumentu, jak i zmianę kursu walutowego.
+- Dla starszych zapisów bez historycznego kursu aplikacja używa bieżącego FX i pokazuje ostrzeżenie.
+- Przełącznik `PLN / USD / EUR` zmienia walutę prezentacji całego portfela; dane źródłowe pozycji pozostają bez zmian.
 
 ---
 
@@ -202,7 +213,7 @@ Dla spółek z GPW używaj symbolu Yahoo z sufiksem `.WA`, np. `CDR.WA` lub `PKN
 | Dane | Źródło | Odśw. |
 |------|--------|-------|
 | Bieżące ceny akcji i krypto | TradingView Scanner (nieoficjalny), potem CoinGecko/Finnhub/Yahoo | 30 s |
-| Indeksy globalne (SPX, NDX, VIX, FX, GOLD, OIL…) | TradingView Scanner (nieoficjalny), potem Yahoo Finance | 60 s |
+| Indeksy globalne i FX (`USDPLN`, `EURPLN`, `EURUSD`) | TradingView Scanner (nieoficjalny), potem Yahoo Finance | 60 s |
 | Kalendarz ekonomiczny | TradingView Economic Calendar (nieoficjalny), potem fallback DEMO | 15 min |
 | Indeks Strachu & Chciwości | Alternative.me (bezpłatny) | 1 h |
 | BTC dominacja + Total Market Cap | CoinGecko `/global` | 5 min |
@@ -234,7 +245,18 @@ cp .env.example .env.local
 | `GROQ_API_KEY` | https://console.groq.com | Zalecane dla AI (darmowy) |
 | `ANTHROPIC_API_KEY` | https://console.anthropic.com | Nie (tryb mock) |
 | `OPENAI_API_KEY` | https://platform.openai.com | Nie (tryb mock) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Ustawienia projektu Supabase → API | Nie (synchronizacja chmurowa) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Ustawienia projektu Supabase → API | Nie (synchronizacja chmurowa) |
 | `NEXT_PUBLIC_DEMO_MODE` | — | Nie (`true` = wymuś demo) |
+
+### Opcjonalna synchronizacja Supabase
+
+1. Utwórz własny projekt Supabase i włącz logowanie e-mail/hasło.
+2. Uruchom w SQL Editor skrypt [`docs/supabase-dashboard-schema.sql`](docs/supabase-dashboard-schema.sql). Tworzy on osobną tabelę `dashboard_states` z RLS ograniczającym dostęp do właściciela rekordu.
+3. Ustaw `NEXT_PUBLIC_SUPABASE_URL` i `NEXT_PUBLIC_SUPABASE_ANON_KEY`, następnie przebuduj aplikację.
+4. W portfelu wybierz `CHMURA`, utwórz konto i użyj ręcznego wysyłania/pobierania kopii.
+
+Publiczny klucz `anon` może znajdować się w przeglądarce; ochronę danych zapewniają reguły RLS. Nie używaj w kliencie klucza `service_role`.
 
 ---
 
@@ -271,7 +293,10 @@ Po pierwszym deploy:
 ```
 COINGECKO_API_KEY     = twoj_klucz
 FINNHUB_KEY           = twoj_klucz
+GROQ_API_KEY          = twoj_klucz
 ANTHROPIC_API_KEY     = twoj_klucz
+NEXT_PUBLIC_SUPABASE_URL      = adres_projektu
+NEXT_PUBLIC_SUPABASE_ANON_KEY = publiczny_klucz_anon
 NEXT_PUBLIC_DEMO_MODE = false
 ```
 
@@ -467,6 +492,7 @@ bloomberg-dashboard/
     ├── app/
     │   ├── globals.css       # CRT efekty, animacje, kolory
     │   ├── layout.tsx
+    │   ├── manifest.ts       # Manifest instalowalnej aplikacji PWA
     │   ├── page.tsx          # Główny dashboard + obsługa skrótów
     │   └── api/
     │       ├── prices/       # GET /api/prices?symbols=BTC:crypto,AAPL:stock
@@ -483,7 +509,10 @@ bloomberg-dashboard/
     │   │   ├── NewsTickerBar.tsx    # Scrollujące nagłówki newsów
     │   │   ├── FunctionBar.tsx      # Dolny pasek F1–F8
     │   │   └── KeyboardShortcuts.tsx# Modal skrótów (klawisz ?)
-    │   ├── watchlist/Watchlist.tsx  # Lista z flash na zmianę ceny
+    │   ├── watchlist/Watchlist.tsx  # Portfel, FX, pozycje i P&L
+    │   ├── watchlist/PortfolioDataTools.tsx # Import/eksport
+    │   ├── watchlist/CloudSync.tsx  # Logowanie i synchronizacja Supabase
+    │   ├── pwa/PWAControls.tsx      # Rejestracja SW i instalacja PWA
     │   ├── chart/CandlestickChart.tsx
     │   ├── news/NewsPanel.tsx
     │   ├── calendar/EconomicCalendar.tsx
@@ -500,8 +529,11 @@ bloomberg-dashboard/
     │   │   ├── yahoo.ts       # Adapter Yahoo Finance (unofficial)
     │   │   ├── mock.ts        # Dane demo — ceny, newsy, kalendarz, AI
     │   │   └── index.ts       # Orkiestrator: próbuje API → fallback mock
-    │   ├── store/useStore.ts  # Zustand: watchlist, alerty, wybrany symbol
+    │   ├── cloud/supabase.ts  # Auth i zapis/odczyt portfela przez REST
+    │   ├── store/useStore.ts  # Zustand: watchlist, pozycje, waluta, alerty
     │   └── utils/
+    │       ├── currency.ts    # Kursy do PLN i konwersja PLN/USD/EUR
+    │       ├── portfolioBackup.ts # Walidacja kopii JSON
     │       ├── formatters.ts  # formatPrice, formatVolume, formatRelativeTime
     │       └── rsi.ts         # RSI(14), SMA, zmienność annualizowana, trend
     └── types/index.ts         # Typy TypeScript: AssetPrice, OHLCBar, NewsItem…
@@ -526,7 +558,7 @@ Przeglądarka
     ├── SWR (co 5min) → /api/news → Yahoo Finance RSS → mock
     ├── SWR (co 1min) → /api/screener → mock + RSI/trend obliczone server-side
     ├── SWR (co 15min) → /api/calendar → TradingView Calendar → mock
-    └── SWR (co 5min) → /api/ai-summary → Claude/OpenAI → mock
+    └── SWR (co 5min) → /api/ai-summary → Groq/Claude/OpenAI → podsumowanie regułowe
 ```
 
 ---
@@ -559,7 +591,7 @@ Odchylenie standardowe dziennych log-returns × √252 (dni handlowych w roku), 
 
 | Biblioteka | Wersja | Zastosowanie |
 |-----------|--------|--------------|
-| Next.js | 14.2 | Framework React, App Router, API routes |
+| Next.js | 15.5 | Framework React, App Router, API routes |
 | TypeScript | 5.x | Typowanie |
 | Tailwind CSS | 3.4 | Stylowanie — dark terminal theme |
 | lightweight-charts | 4.1 | TradingView wykres świecowy |

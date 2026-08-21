@@ -12,6 +12,7 @@ const EMPTY_INDICES: MarketIndex[] = [
   { symbol: 'DJI', name: 'DJIA', value: NaN, change: NaN, pct: NaN },
   { symbol: 'VIX', name: 'VIX', value: NaN, change: NaN, pct: NaN },
   { symbol: 'USDPLN', name: 'USD/PLN', value: NaN, change: NaN, pct: NaN },
+  { symbol: 'EURPLN', name: 'EUR/PLN', value: NaN, change: NaN, pct: NaN },
   { symbol: 'EURUSD', name: 'EUR/USD', value: NaN, change: NaN, pct: NaN },
   { symbol: 'GOLD', name: 'GOLD', value: NaN, change: NaN, pct: NaN },
   { symbol: 'OIL', name: 'WTI/bbl', value: NaN, change: NaN, pct: NaN },

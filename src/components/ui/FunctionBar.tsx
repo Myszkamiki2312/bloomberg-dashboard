@@ -1,4 +1,5 @@
 'use client'
+import PWAControls from '@/components/pwa/PWAControls'
 
 interface FnItem {
   key: string
@@ -62,6 +63,7 @@ export default function FunctionBar({
       </div>
       <div className="flex items-center gap-4 px-3 border-l border-[#1c1c1c] text-[10px] text-[#444] shrink-0">
         <span>ESC:ZAMKNIJ</span>
+        <PWAControls />
         <button
           type="button"
           onClick={onReadableModeToggle}

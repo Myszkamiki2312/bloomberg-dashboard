@@ -1,7 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { WatchlistEntry, PriceAlert } from '@/types'
+import type { WatchlistEntry, PriceAlert, PortfolioCurrency } from '@/types'
 
 const DEFAULT_WATCHLIST: WatchlistEntry[] = [
   { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', coinId: 'bitcoin' },
@@ -19,11 +19,18 @@ interface AppStore {
   selectedSymbol: string
   selectedType: 'stock' | 'crypto'
   alerts: PriceAlert[]
+  baseCurrency: PortfolioCurrency
 
   setSelectedSymbol: (symbol: string, type: 'stock' | 'crypto') => void
   addToWatchlist: (entry: WatchlistEntry) => void
   removeFromWatchlist: (symbol: string) => void
-  updateWatchlistEntry: (symbol: string, patch: Pick<WatchlistEntry, 'quantity' | 'avgPrice'>) => void
+  updateWatchlistEntry: (symbol: string, patch: Pick<WatchlistEntry, 'quantity' | 'avgPrice' | 'purchaseFxRateToPln'>) => void
+  setBaseCurrency: (currency: PortfolioCurrency) => void
+  replacePortfolioState: (state: {
+    watchlist: WatchlistEntry[]
+    alerts?: PriceAlert[]
+    baseCurrency?: PortfolioCurrency
+  }) => void
   addAlert: (alert: Omit<PriceAlert, 'id' | 'createdAt' | 'triggered'>) => void
   removeAlert: (id: string) => void
   clearTriggeredAlerts: () => void
@@ -38,6 +45,7 @@ export const useStore = create<AppStore>()(
       selectedSymbol: 'BTC',
       selectedType: 'crypto',
       alerts: [],
+      baseCurrency: 'PLN',
 
       setSelectedSymbol: (symbol, type) => set({ selectedSymbol: symbol, selectedType: type }),
 
@@ -64,6 +72,21 @@ export const useStore = create<AppStore>()(
             w.symbol === symbol ? { ...w, ...patch } : w
           ),
         })),
+
+      setBaseCurrency: baseCurrency => set({ baseCurrency }),
+
+      replacePortfolioState: imported => set(state => {
+        const selectedStillExists = imported.watchlist.some(entry => entry.symbol === state.selectedSymbol)
+        const first = imported.watchlist[0]
+        return {
+          watchlist: imported.watchlist,
+          alerts: imported.alerts ?? state.alerts,
+          baseCurrency: imported.baseCurrency ?? state.baseCurrency,
+          ...(!selectedStillExists && first
+            ? { selectedSymbol: first.symbol, selectedType: first.type }
+            : {}),
+        }
+      }),
 
       addAlert: alert =>
         set(s => ({
@@ -115,7 +138,15 @@ export const useStore = create<AppStore>()(
         if (typeof window === 'undefined' || !('Notification' in window)) return
 
         const send = () => {
-          pendingNotifications.forEach(n => new Notification(n.title, { body: n.body, icon: '/favicon.ico' }))
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+              pendingNotifications.forEach(n => {
+                void registration.showNotification(n.title, { body: n.body, icon: '/icon-192.png' })
+              })
+            }).catch(() => undefined)
+            return
+          }
+          pendingNotifications.forEach(n => new Notification(n.title, { body: n.body, icon: '/icon-192.png' }))
         }
 
         if (Notification.permission === 'granted') {
@@ -135,6 +166,7 @@ export const useStore = create<AppStore>()(
         alerts: state.alerts,
         selectedSymbol: state.selectedSymbol,
         selectedType: state.selectedType,
+        baseCurrency: state.baseCurrency,
       }),
     }
   )

@@ -56,6 +56,7 @@ export function getMockPrices(): AssetPrice[] {
   const now = new Date().toISOString()
   return MOCK_PRICES_BASE.map(p => ({
     ...p,
+    currency: 'USD',
     lastUpdated: now,
     source: 'Dane demonstracyjne',
     quality: 'demo',

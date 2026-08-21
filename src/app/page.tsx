@@ -9,6 +9,7 @@ import FunctionBar from '@/components/ui/FunctionBar'
 import NewsTickerBar from '@/components/ui/NewsTickerBar'
 import KeyboardShortcuts from '@/components/ui/KeyboardShortcuts'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import PWAControls from '@/components/pwa/PWAControls'
 
 const Watchlist       = dynamic(() => import('@/components/watchlist/Watchlist'),      { ssr: false })
 const CandlestickChart= dynamic(() => import('@/components/chart/CandlestickChart'),  { ssr: false })
@@ -117,6 +118,7 @@ function CompactDashboard({
         >
           {readableMode ? 'TEKST A−' : 'TEKST A+'}
         </button>
+        <PWAControls compact />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
         <section className="min-h-[440px] md:col-span-2 scroll-mt-14">

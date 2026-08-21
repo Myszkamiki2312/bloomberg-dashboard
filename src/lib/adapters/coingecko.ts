@@ -85,6 +85,7 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<AssetPrice[]
         volume24h: d.usd_24h_vol ?? 0,
         marketCap: d.usd_market_cap ?? 0,
         type: 'crypto' as const,
+        currency: 'USD',
         lastUpdated: new Date().toISOString(),
         source: 'CoinGecko',
         quality: 'live' as const,

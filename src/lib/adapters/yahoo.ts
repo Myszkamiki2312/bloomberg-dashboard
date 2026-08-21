@@ -67,6 +67,7 @@ export async function fetchYahooQuote(symbol: string): Promise<AssetPrice | null
       volume24h: meta.regularMarketVolume ?? 0,
       marketCap: 0,
       type: 'stock',
+      currency: typeof meta.currency === 'string' && meta.currency ? meta.currency.toUpperCase() : 'USD',
       lastUpdated: new Date().toISOString(),
       source: 'Yahoo Finance',
       quality: 'delayed',

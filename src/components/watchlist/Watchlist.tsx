@@ -3,10 +3,19 @@ import { useState, useRef, useEffect } from 'react'
 import useSWR from 'swr'
 import { clsx } from 'clsx'
 import { useStore } from '@/lib/store/useStore'
-import { formatPrice, formatVolume } from '@/lib/utils/formatters'
-import type { AssetPrice, WatchlistEntry } from '@/types'
+import { formatCurrency, formatPrice, formatVolume } from '@/lib/utils/formatters'
+import {
+  buildFxRates,
+  convertMoney,
+  convertPlnToBase,
+  isPortfolioCurrency,
+  PORTFOLIO_CURRENCIES,
+  type FxRatesToPln,
+} from '@/lib/utils/currency'
+import type { AssetPrice, MarketIndex, PortfolioCurrency, WatchlistEntry } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { SkeletonBlock } from '@/components/ui/Skeleton'
+import PortfolioDataTools from './PortfolioDataTools'
 
 const fetcher = async (url: string) => {
   const response = await fetch(url)
@@ -14,15 +23,56 @@ const fetcher = async (url: string) => {
   return response.json()
 }
 
-function fmtPnl(val: number): string {
-  if (!isFinite(val)) return '—'
-  const abs = Math.abs(val)
-  if (abs >= 1000) return `${(val / 1000).toFixed(1)}k`
-  return val.toFixed(2)
+interface PositionMetrics {
+  value: number
+  cost: number
+  pnl: number
+  pnlPct: number
+  estimatedPurchaseFx: boolean
+}
+
+function calculatePosition(
+  entry: WatchlistEntry,
+  price: AssetPrice | undefined,
+  baseCurrency: PortfolioCurrency,
+  fxRates: FxRatesToPln
+): PositionMetrics | null {
+  if (!price || !entry.quantity || entry.quantity <= 0 || !entry.avgPrice || entry.avgPrice <= 0) return null
+  if (!isPortfolioCurrency(price.currency)) return null
+  const currentFxToPln = fxRates[price.currency]
+  const baseFxToPln = fxRates[baseCurrency]
+  if (!currentFxToPln || !baseFxToPln) return null
+
+  const purchaseFxToPln = price.currency === 'PLN'
+    ? 1
+    : entry.purchaseFxRateToPln && entry.purchaseFxRateToPln > 0
+      ? entry.purchaseFxRateToPln
+      : currentFxToPln
+  const valuePln = price.price * entry.quantity * currentFxToPln
+  const costPln = entry.avgPrice * entry.quantity * purchaseFxToPln
+  const value = convertPlnToBase(valuePln, baseCurrency, fxRates)
+  const cost = convertPlnToBase(costPln, baseCurrency, fxRates)
+  if (value == null || cost == null) return null
+
+  return {
+    value,
+    cost,
+    pnl: value - cost,
+    pnlPct: costPln > 0 ? ((valuePln - costPln) / costPln) * 100 : 0,
+    estimatedPurchaseFx: price.currency !== 'PLN' && !entry.purchaseFxRateToPln,
+  }
 }
 
 export default function Watchlist() {
-  const { watchlist, selectedSymbol, setSelectedSymbol, removeFromWatchlist, checkAlerts } = useStore()
+  const {
+    watchlist,
+    selectedSymbol,
+    setSelectedSymbol,
+    removeFromWatchlist,
+    checkAlerts,
+    baseCurrency,
+    setBaseCurrency,
+  } = useStore()
   const symbolsParam = watchlist.map(w => `${w.symbol}:${w.type}`).join(',')
 
   const prevPrices = useRef<Record<string, number>>({})
@@ -56,8 +106,14 @@ export default function Watchlist() {
       },
     }
   )
+  const { data: indices = [] } = useSWR<MarketIndex[]>('/api/indices', fetcher, {
+    refreshInterval: 60000,
+    revalidateOnFocus: false,
+  })
 
   const priceMap = Object.fromEntries(prices.map(p => [p.symbol, p]))
+  const currencies = Object.fromEntries(prices.map(price => [price.symbol, price.currency]))
+  const fxRates = buildFxRates(indices)
   const hasDemoPrices = prices.some(price => price.quality === 'demo')
   const hasDelayedPrices = prices.some(price => price.quality === 'delayed')
   const qualityBadge = prices.length === 0 ? 'ŁADOWANIE' : hasDemoPrices ? 'CZĘŚĆ DEMO' : hasDelayedPrices ? 'OPÓŹN.' : 'LIVE'
@@ -67,15 +123,18 @@ export default function Watchlist() {
   // Portfolio totals — wait for all position prices before computing P&L
   // (avoids showing large fake loss while prices are still loading)
   const portfolioEntries = watchlist.filter(w => w.quantity && w.quantity > 0 && w.avgPrice && w.avgPrice > 0)
-  const portfolioPricesLoaded = portfolioEntries.length > 0 && portfolioEntries.every(w => priceMap[w.symbol] !== undefined)
-  const totalValue  = portfolioPricesLoaded ? portfolioEntries.reduce((sum, w) => {
-    const p = priceMap[w.symbol]
-    return sum + (p ? p.price * w.quantity! : 0)
-  }, 0) : 0
-  const totalCost   = portfolioEntries.reduce((sum, w) => sum + w.avgPrice! * w.quantity!, 0)
+  const portfolioMetrics = portfolioEntries.map(entry => calculatePosition(entry, priceMap[entry.symbol], baseCurrency, fxRates))
+  const portfolioPricesLoaded = portfolioEntries.length > 0 && portfolioMetrics.every(metric => metric !== null)
+  const validMetrics = portfolioMetrics.filter((metric): metric is PositionMetrics => metric !== null)
+  const totalValue = validMetrics.reduce((sum, metric) => sum + metric.value, 0)
+  const totalCost = validMetrics.reduce((sum, metric) => sum + metric.cost, 0)
   const totalPnl    = totalValue - totalCost
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
   const hasPortfolio = portfolioEntries.length > 0
+  const usesEstimatedPurchaseFx = validMetrics.some(metric => metric.estimatedPurchaseFx)
+  const fxIndices = indices.filter(index => index.symbol === 'USDPLN' || index.symbol === 'EURPLN')
+  const hasDemoFx = fxIndices.some(index => index.quality === 'demo')
+  const fxDetails = fxIndices.map(index => `${index.name}: ${index.source}`).join('\n')
 
   return (
     <TerminalCard
@@ -83,6 +142,27 @@ export default function Watchlist() {
       badge={qualityBadge}
       badgeColor={qualityColor}
       className="h-full"
+      action={(
+        <div className="flex items-center gap-0.5" aria-label="Waluta portfela">
+          {PORTFOLIO_CURRENCIES.map(currency => (
+            <button
+              key={currency}
+              type="button"
+              onClick={() => setBaseCurrency(currency)}
+              className={clsx(
+                'px-1 py-px text-[8px] border transition-colors',
+                currency === baseCurrency
+                  ? 'border-[#00cccc] text-[#00cccc]'
+                  : 'border-[#222] text-[#444] hover:text-[#888]'
+              )}
+              aria-pressed={currency === baseCurrency}
+              title={`Przelicz portfel na ${currency}`}
+            >
+              {currency}
+            </button>
+          ))}
+        </div>
+      )}
     >
       {pricesError ? (
         <div className="flex flex-col items-center justify-center gap-2 p-4 text-[10px]">
@@ -106,9 +186,7 @@ export default function Watchlist() {
           const flash = flashMap[entry.symbol]
           const volPct = p ? (p.volume24h / maxVol) * 100 : 0
           const hasPos = !!(entry.quantity && entry.quantity > 0 && entry.avgPrice && entry.avgPrice > 0)
-          const pnl    = hasPos && p ? (p.price - entry.avgPrice!) * entry.quantity! : null
-          // Only compute pnlPct when price is loaded — p?.price ?? 0 would show -100% while loading
-          const pnlPct = hasPos && p && entry.avgPrice! > 0 ? (p.price - entry.avgPrice!) / entry.avgPrice! * 100 : null
+          const position = hasPos ? calculatePosition(entry, p, baseCurrency, fxRates) : null
 
           return (
             <div key={entry.symbol}>
@@ -138,6 +216,7 @@ export default function Watchlist() {
                     <div className="font-bold text-[#ffaa00] truncate">{entry.symbol}</div>
                     <div className="text-[9px] text-[#444] truncate">
                       {p?.name && p.name !== entry.symbol ? p.name : entry.name}
+                      {p?.currency ? ` · ${p.currency}` : ''}
                     </div>
                   </div>
                 </div>
@@ -147,9 +226,9 @@ export default function Watchlist() {
                   <div className={clsx('num font-bold', flash === 'up' ? 'text-[#00ff41]' : flash === 'down' ? 'text-[#ff0040]' : 'text-[#c8c8c8]')}>
                     {p ? formatPrice(p.price) : '—'}
                   </div>
-                  {hasPos && pnl !== null ? (
-                    <div className={clsx('text-[9px] num font-bold', pnl >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                      {pnl >= 0 ? '+' : ''}{fmtPnl(pnl)}
+                  {position ? (
+                    <div className={clsx('text-[9px] num font-bold', position.pnl >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {position.pnl >= 0 ? '+' : ''}{formatCurrency(position.pnl, baseCurrency)}
                     </div>
                   ) : p ? (
                     <div className="text-[9px] text-[#444] num">{formatVolume(p.volume24h)}</div>
@@ -158,9 +237,9 @@ export default function Watchlist() {
 
                 {/* Change % / P&L% + actions */}
                 <div className="text-right flex flex-col items-end gap-0.5">
-                  {hasPos && pnlPct !== null ? (
-                    <span className={clsx('num font-bold', pnlPct >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-                      {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%
+                  {position ? (
+                    <span className={clsx('num font-bold', position.pnlPct >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
+                      {position.pnlPct >= 0 ? '+' : ''}{position.pnlPct.toFixed(1)}%
                     </span>
                   ) : (
                     <span className={clsx('num font-bold', p && p.changePercent24h >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
@@ -203,6 +282,9 @@ export default function Watchlist() {
                 <PositionEditor
                   entry={entry}
                   currentPrice={p?.price}
+                  quoteCurrency={p && isPortfolioCurrency(p.currency) ? p.currency : undefined}
+                  baseCurrency={baseCurrency}
+                  fxRates={fxRates}
                   onClose={() => setEditingSymbol(null)}
                 />
               )}
@@ -218,14 +300,30 @@ export default function Watchlist() {
         <div className="border-t border-[#1c1c1c] px-2 py-2 bg-[#050505] mt-auto">
           <div className="flex items-center justify-between text-[10px] mb-1">
             <span className="text-[#555] uppercase tracking-widest text-[9px]">Portfel</span>
-            <span className="num text-[#c8c8c8] font-bold">{formatPrice(totalValue)}</span>
+            <span className="num text-[#c8c8c8] font-bold">{formatCurrency(totalValue, baseCurrency)}</span>
           </div>
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-[#555]">Koszt: <span className="text-[#666] num">{formatPrice(totalCost)}</span></span>
+            <span className="text-[#555]">Koszt: <span className="text-[#666] num">{formatCurrency(totalCost, baseCurrency)}</span></span>
             <span className={clsx('num font-bold', totalPnl >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-              {totalPnl >= 0 ? '+' : ''}{fmtPnl(totalPnl)} ({totalPnlPct >= 0 ? '+' : ''}{totalPnlPct.toFixed(2)}%)
+              {totalPnl >= 0 ? '+' : ''}{formatCurrency(totalPnl, baseCurrency)} ({totalPnlPct >= 0 ? '+' : ''}{totalPnlPct.toFixed(2)}%)
             </span>
           </div>
+          {usesEstimatedPurchaseFx && (
+            <div className="text-[8px] text-[#ffaa00] mt-1" title="Otwórz edycję pozycji i wpisz historyczny kurs waluty do PLN">
+              ⚠ Stare pozycje bez kursu zakupu używają bieżącego FX
+            </div>
+          )}
+          {fxIndices.length > 0 && (
+            <div
+              className={clsx('text-[8px] mt-1 num', hasDemoFx ? 'text-[#ffaa00]' : 'text-[#444]')}
+              title={fxDetails}
+            >
+              FX: {fxRates.USD ? `USD/PLN ${fxRates.USD.toFixed(4)}` : 'USD/PLN —'}
+              {' · '}
+              {fxRates.EUR ? `EUR/PLN ${fxRates.EUR.toFixed(4)}` : 'EUR/PLN —'}
+              {hasDemoFx ? ' · ⚠ DEMO' : ''}
+            </div>
+          )}
           <div className="bar-track mt-1">
             <div
               className={totalPnl >= 0 ? 'bar-fill-pos' : 'bar-fill-neg'}
@@ -234,6 +332,12 @@ export default function Watchlist() {
           </div>
         </div>
       )}
+      {hasPortfolio && !portfolioPricesLoaded && !pricesLoading && (
+        <div className="border-t border-[#1c1c1c] px-2 py-1 text-[9px] text-[#ffaa00] bg-[#050505]">
+          Nie można przeliczyć części portfela — obsługiwane waluty: PLN, USD, EUR.
+        </div>
+      )}
+      <PortfolioDataTools currencies={currencies} />
       </>
       )}
     </TerminalCard>
@@ -243,28 +347,41 @@ export default function Watchlist() {
 function PositionEditor({
   entry,
   currentPrice,
+  quoteCurrency,
+  baseCurrency,
+  fxRates,
   onClose,
 }: {
   entry: WatchlistEntry
   currentPrice?: number
+  quoteCurrency?: PortfolioCurrency
+  baseCurrency: PortfolioCurrency
+  fxRates: FxRatesToPln
   onClose: () => void
 }) {
   const updateWatchlistEntry = useStore(s => s.updateWatchlistEntry)
   const [qty, setQty]   = useState(entry.quantity?.toString() ?? '')
   const [avg, setAvg]   = useState(entry.avgPrice?.toString() ?? (currentPrice?.toString() ?? ''))
+  const currentFxToPln = quoteCurrency ? fxRates[quoteCurrency] : undefined
+  const [purchaseFx, setPurchaseFx] = useState(
+    entry.purchaseFxRateToPln?.toString()
+      ?? (quoteCurrency === 'PLN' ? '1' : currentFxToPln?.toString() ?? '')
+  )
 
   const handleSave = () => {
     const quantity = parseFloat(qty)
     const avgPrice = parseFloat(avg)
+    const purchaseFxRateToPln = quoteCurrency === 'PLN' ? 1 : parseFloat(purchaseFx)
     // Reject NaN, Infinity, negative quantities, and non-positive prices
     if (!isFinite(quantity) || quantity < 0) return
     if (!isFinite(avgPrice) || avgPrice <= 0) return
-    updateWatchlistEntry(entry.symbol, { quantity, avgPrice })
+    if (!isFinite(purchaseFxRateToPln) || purchaseFxRateToPln <= 0) return
+    updateWatchlistEntry(entry.symbol, { quantity, avgPrice, purchaseFxRateToPln })
     onClose()
   }
 
   const handleClear = () => {
-    updateWatchlistEntry(entry.symbol, { quantity: 0, avgPrice: 0 })
+    updateWatchlistEntry(entry.symbol, { quantity: 0, avgPrice: 0, purchaseFxRateToPln: 0 })
     onClose()
   }
 
@@ -289,7 +406,7 @@ function PositionEditor({
           />
         </div>
         <div className="flex-1">
-          <div className="text-[9px] text-[#555] mb-0.5">Śr. cena</div>
+          <div className="text-[9px] text-[#555] mb-0.5">Śr. cena{quoteCurrency ? ` (${quoteCurrency})` : ''}</div>
           <input
             value={avg}
             onChange={e => setAvg(e.target.value)}
@@ -302,13 +419,52 @@ function PositionEditor({
           />
         </div>
       </div>
-      {qty && avg && isFinite(parseFloat(qty)) && isFinite(parseFloat(avg)) && currentPrice && (
+      {quoteCurrency && quoteCurrency !== 'PLN' && (
+        <div>
+          <div className="text-[9px] text-[#555] mb-0.5">Kurs {quoteCurrency}/PLN przy zakupie</div>
+          <input
+            value={purchaseFx}
+            onChange={event => setPurchaseFx(event.target.value)}
+            onKeyDown={event => event.key === 'Enter' && handleSave()}
+            type="number"
+            min="0"
+            step="any"
+            placeholder={currentFxToPln?.toFixed(4) ?? '0'}
+            className="w-full bg-black border border-[#2a2a2a] focus:border-[#00cccc] px-1.5 py-0.5 text-[10px] text-[#c8c8c8] outline-none"
+          />
+          <div className="text-[8px] text-[#444] mt-0.5">
+            Bieżący: {currentFxToPln?.toFixed(4) ?? '—'} PLN
+          </div>
+        </div>
+      )}
+      {qty && avg && isFinite(parseFloat(qty)) && isFinite(parseFloat(avg)) && currentPrice && quoteCurrency && (
         <div className="text-[9px] text-[#555]">
-          Wartość: <span className="text-[#c8c8c8] num">{formatPrice(parseFloat(qty) * currentPrice)}</span>
+          Wartość:{' '}
+          <span className="text-[#c8c8c8] num">
+            {formatCurrency(
+              convertMoney(parseFloat(qty) * currentPrice, quoteCurrency, baseCurrency, fxRates) ?? NaN,
+              baseCurrency
+            )}
+          </span>
           {' · '}
           P&L:{' '}
-          <span className={clsx('num font-bold', (currentPrice - parseFloat(avg)) >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
-            {fmtPnl((currentPrice - parseFloat(avg)) * parseFloat(qty))}
+          <span className={clsx(
+            'num font-bold',
+            (currentPrice * (currentFxToPln ?? 0) - parseFloat(avg) * parseFloat(purchaseFx || '0')) >= 0
+              ? 'text-[#00ff41]'
+              : 'text-[#ff0040]'
+          )}>
+            {formatCurrency(
+              convertPlnToBase(
+                parseFloat(qty) * (
+                  currentPrice * (currentFxToPln ?? 0)
+                  - parseFloat(avg) * parseFloat(purchaseFx || '0')
+                ),
+                baseCurrency,
+                fxRates
+              ) ?? NaN,
+              baseCurrency
+            )}
           </span>
         </div>
       )}

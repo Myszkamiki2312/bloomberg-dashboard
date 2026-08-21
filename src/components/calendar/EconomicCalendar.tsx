@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import useSWR from 'swr'
 import { clsx } from 'clsx'
 import type { EconomicEvent } from '@/types'
@@ -18,13 +19,25 @@ const IMPORTANCE_CONFIG = {
   low: { label: '●○○', color: 'text-[#555]' },
 }
 
+const COUNTRY_LABELS: Record<string, string> = {
+  US: 'USA', EU: 'Strefa euro', PL: 'Polska', GB: 'Wielka Brytania',
+  DE: 'Niemcy', JP: 'Japonia', CN: 'Chiny',
+}
+
 export default function EconomicCalendar() {
+  const [countryFilter, setCountryFilter] = useState('ALL')
+  const [importanceFilter, setImportanceFilter] = useState<'all' | EconomicEvent['importance']>('all')
   const { data: events = [], isLoading, error } = useSWR<EconomicEvent[]>('/api/calendar', fetcher, {
     refreshInterval: 3600000,
     revalidateOnFocus: false,
   })
 
-  const grouped = events.reduce<Record<string, EconomicEvent[]>>((acc, ev) => {
+  const countries = [...new Set(events.map(event => event.country))].sort()
+  const visibleEvents = events.filter(event =>
+    (countryFilter === 'ALL' || event.country === countryFilter)
+    && (importanceFilter === 'all' || event.importance === importanceFilter)
+  )
+  const grouped = visibleEvents.reduce<Record<string, EconomicEvent[]>>((acc, ev) => {
     if (!acc[ev.date]) acc[ev.date] = []
     acc[ev.date].push(ev)
     return acc
@@ -50,14 +63,44 @@ export default function EconomicCalendar() {
           ? 'Fallback demonstracyjny · harmonogram nie jest aktualnym kalendarzem'
           : 'TradingView Economic Calendar — nieoficjalne · czas Europe/Warsaw · aktualizacja co 15 min'}
       </div>
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-[#1c1c1c] bg-[#050505] text-[9px]">
+        <select
+          value={countryFilter}
+          onChange={event => setCountryFilter(event.target.value)}
+          className="bg-black border border-[#2a2a2a] text-[#888] px-1 py-0.5 outline-none focus:border-[#ffaa00] max-w-32"
+          aria-label="Filtr kraju"
+        >
+          <option value="ALL">Wszystkie kraje</option>
+          {countries.map(country => (
+            <option key={country} value={country}>{COUNTRY_LABELS[country] ?? country}</option>
+          ))}
+        </select>
+        {(['all', 'high', 'medium', 'low'] as const).map(importance => (
+          <button
+            key={importance}
+            type="button"
+            onClick={() => setImportanceFilter(importance)}
+            className={clsx(
+              'border px-1.5 py-0.5 transition-colors',
+              importanceFilter === importance
+                ? 'border-[#ffaa00] text-[#ffaa00]'
+                : 'border-[#222] text-[#444] hover:text-[#888]'
+            )}
+            aria-pressed={importanceFilter === importance}
+          >
+            {importance === 'all' ? 'WSZ.' : IMPORTANCE_CONFIG[importance].label}
+          </button>
+        ))}
+        <span className="text-[#444] ml-auto">{visibleEvents.length}/{events.length}</span>
+      </div>
       {isLoading && events.length === 0 ? (
         <SkeletonBlock rows={6} cols={3} />
       ) : error ? (
         <div className="flex items-center justify-center p-4 text-[10px] text-[#ff0040]">
           ⚠ Błąd ładowania kalendarza
         </div>
-      ) : events.length === 0 ? (
-        <div className="p-3 text-[#555] text-[11px]">Brak wydarzeń ekonomicznych.</div>
+      ) : visibleEvents.length === 0 ? (
+        <div className="p-3 text-[#555] text-[11px]">Brak wydarzeń dla wybranych filtrów.</div>
       ) : (
       <div className="flex flex-col divide-y divide-[#1c1c1c]">
         {sortedDays.map(([date, dayEvents]) => (

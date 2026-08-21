@@ -7,12 +7,14 @@ export interface AssetPrice {
   volume24h: number
   marketCap: number
   type: 'stock' | 'crypto'
+  currency: string
   lastUpdated: string
   source?: string
   quality?: DataQuality
 }
 
 export type DataQuality = 'live' | 'delayed' | 'demo'
+export type PortfolioCurrency = 'PLN' | 'USD' | 'EUR'
 
 export interface OHLCBar {
   time: string
@@ -94,6 +96,7 @@ export interface WatchlistEntry {
   coinId?: string
   quantity?: number
   avgPrice?: number
+  purchaseFxRateToPln?: number
 }
 
 export interface MarketIndex {

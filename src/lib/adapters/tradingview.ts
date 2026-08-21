@@ -64,6 +64,7 @@ const INDEX_TICKERS = [
   { ticker: 'DJ:DJI', symbol: 'DJI', name: 'DJIA' },
   { ticker: 'TVC:VIX', symbol: 'VIX', name: 'VIX' },
   { ticker: 'FX_IDC:USDPLN', symbol: 'USDPLN', name: 'USD/PLN' },
+  { ticker: 'FX_IDC:EURPLN', symbol: 'EURPLN', name: 'EUR/PLN' },
   { ticker: 'FX:EURUSD', symbol: 'EURUSD', name: 'EUR/USD' },
   { ticker: 'TVC:GOLD', symbol: 'GOLD', name: 'GOLD' },
   { ticker: 'NYMEX:CL1!', symbol: 'OIL', name: 'WTI futures' },
@@ -186,6 +187,12 @@ function sourceLabel(quote: ParsedQuote): string {
   return `TradingView Scanner — nieoficjalne (${mode})${quote.currency ? ` · ${quote.currency}` : ''}`
 }
 
+function normalizedCurrency(currency: string): string {
+  const normalized = currency.toUpperCase()
+  if (['USDT', 'USDC', 'BUSD'].includes(normalized)) return 'USD'
+  return normalized || 'USD'
+}
+
 export async function fetchTradingViewPrices(
   symbols: { symbol: string; type: 'stock' | 'crypto' }[]
 ): Promise<AssetPrice[]> {
@@ -206,6 +213,7 @@ export async function fetchTradingViewPrices(
       volume24h: quote.volume,
       marketCap: quote.marketCap,
       type: item.type,
+      currency: normalizedCurrency(quote.currency),
       lastUpdated: now,
       source: sourceLabel(quote),
       quality: 'delayed' as const,

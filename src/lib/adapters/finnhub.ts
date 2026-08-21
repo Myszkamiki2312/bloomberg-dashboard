@@ -31,6 +31,7 @@ export async function fetchStockQuote(symbol: string): Promise<AssetPrice | null
     volume24h: quote.v ?? 0,
     marketCap: profile.marketCapitalization ? profile.marketCapitalization * 1e6 : 0,
     type: 'stock',
+    currency: typeof profile.currency === 'string' && profile.currency ? profile.currency.toUpperCase() : 'USD',
     lastUpdated: new Date().toISOString(),
     source: 'Finnhub',
     quality: 'live',

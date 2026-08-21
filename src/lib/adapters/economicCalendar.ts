@@ -29,6 +29,47 @@ const FLAG_BY_COUNTRY: Record<string, string> = {
   JP: '🇯🇵', CN: '🇨🇳', CA: '🇨🇦', AU: '🇦🇺', CH: '🇨🇭',
 }
 
+const EVENT_TRANSLATIONS: [RegExp, string][] = [
+  [/S&P Global Composite PMI Flash/gi, 'S&P Global: wstępny zbiorczy PMI'],
+  [/S&P Global Services PMI Flash/gi, 'S&P Global: wstępny PMI usług'],
+  [/S&P Global Manufacturing PMI Flash/gi, 'S&P Global: wstępny PMI przemysłu'],
+  [/Retail Sales ex Fuel/gi, 'Sprzedaż detaliczna bez paliw'],
+  [/Retail Sales/gi, 'Sprzedaż detaliczna'],
+  [/Consumer Confidence/gi, 'Nastroje konsumentów'],
+  [/Consumer Inflation Expectations/gi, 'Oczekiwania inflacyjne konsumentów'],
+  [/Inflation Expectations/gi, 'Oczekiwania inflacyjne'],
+  [/Inflation Rate/gi, 'Inflacja'],
+  [/Interest Rate Decision/gi, 'Decyzja ws. stóp procentowych'],
+  [/Unemployment Rate/gi, 'Stopa bezrobocia'],
+  [/Unemployment Change/gi, 'Zmiana bezrobocia'],
+  [/Initial Jobless Claims/gi, 'Pierwsze wnioski o zasiłek'],
+  [/Industrial Production/gi, 'Produkcja przemysłowa'],
+  [/Durable Goods Orders/gi, 'Zamówienia na dobra trwałe'],
+  [/New Home Sales/gi, 'Sprzedaż nowych domów'],
+  [/Existing Home Sales/gi, 'Sprzedaż domów na rynku wtórnym'],
+  [/Business Confidence/gi, 'Nastroje biznesu'],
+  [/Economic Sentiment/gi, 'Nastroje gospodarcze'],
+  [/Manufacturing PMI/gi, 'PMI przemysłu'],
+  [/Services PMI/gi, 'PMI usług'],
+  [/Composite PMI/gi, 'Zbiorczy PMI'],
+  [/GDP Growth Rate/gi, 'Wzrost PKB'],
+  [/GDP/gi, 'PKB'],
+  [/Fed Chair (.+) Speech/gi, 'Wystąpienie prezesa Fed: $1'],
+  [/ECB (.+) Speech/gi, 'Wystąpienie EBC: $1'],
+  [/\bYoY\b/g, 'r/r'],
+  [/\bMoM\b/g, 'm/m'],
+  [/\bQoQ\b/g, 'kw/kw'],
+  [/\bFinal\b/gi, 'finalny'],
+  [/\bPrel\b/gi, 'wstępny'],
+]
+
+function translateEventTitle(title: string): string {
+  return EVENT_TRANSLATIONS.reduce(
+    (translated, [pattern, replacement]) => translated.replace(pattern, replacement),
+    title
+  )
+}
+
 function warsawDateParts(date: Date): { date: string; time: string } {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Warsaw',
@@ -82,7 +123,7 @@ function parseEvent(event: TradingViewCalendarEvent): EconomicEvent | null {
     time: local.time,
     country: event.country,
     flag: FLAG_BY_COUNTRY[event.country] ?? '🌐',
-    event: event.title,
+    event: translateEventTitle(event.title),
     importance: mapImportance(event.importance),
     actual: formatValue(event.actual, event.unit, event.scale),
     forecast: formatValue(event.forecast, event.unit, event.scale),
@@ -123,10 +164,27 @@ export async function fetchEconomicCalendar(days = 7): Promise<EconomicEvent[]> 
     throw new Error('TradingView calendar: unexpected response format')
   }
 
-  return json.result
-    .filter(event => event.importance === 0 || (event.importance ?? -1) >= 1 || event.country === 'PL')
+  const parsed = json.result
     .map(parseEvent)
     .filter((event): event is EconomicEvent => event !== null)
+  const byDay = parsed.reduce((groups, event) => {
+    const day = groups.get(event.date) ?? []
+    day.push(event)
+    groups.set(event.date, day)
+    return groups
+  }, new Map<string, EconomicEvent[]>())
+  const importanceScore = { high: 3, medium: 2, low: 1 }
+
+  return [...byDay.values()]
+    .flatMap(dayEvents => [...dayEvents]
+      .sort((a, b) => {
+        const scoreDiff = importanceScore[b.importance] - importanceScore[a.importance]
+        if (scoreDiff !== 0) return scoreDiff
+        if (a.country === 'PL' && b.country !== 'PL') return -1
+        if (b.country === 'PL' && a.country !== 'PL') return 1
+        return a.time.localeCompare(b.time)
+      })
+      .slice(0, 18))
     .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))
-    .slice(0, 60)
+    .slice(0, 120)
 }
