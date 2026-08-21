@@ -48,7 +48,7 @@ export default function EconomicCalendar() {
       )}>
         {hasDemoData
           ? 'Fallback demonstracyjny · harmonogram nie jest aktualnym kalendarzem'
-          : 'TradingView Economic Calendar · czas Europe/Warsaw · aktualizacja co 15 min'}
+          : 'TradingView Economic Calendar — nieoficjalne · czas Europe/Warsaw · aktualizacja co 15 min'}
       </div>
       {isLoading && events.length === 0 ? (
         <SkeletonBlock rows={6} cols={3} />

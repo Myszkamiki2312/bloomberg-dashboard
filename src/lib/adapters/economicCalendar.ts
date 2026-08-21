@@ -87,7 +87,7 @@ function parseEvent(event: TradingViewCalendarEvent): EconomicEvent | null {
     actual: formatValue(event.actual, event.unit, event.scale),
     forecast: formatValue(event.forecast, event.unit, event.scale),
     previous: formatValue(event.previous, event.unit, event.scale),
-    source: `TradingView Economic Calendar${event.source ? ` · ${event.source}` : ''}`,
+    source: `TradingView Economic Calendar — nieoficjalne${event.source ? ` · ${event.source}` : ''}`,
     sourceUrl: event.source_url || 'https://www.tradingview.com/economic-calendar/',
     quality: 'delayed',
   }
