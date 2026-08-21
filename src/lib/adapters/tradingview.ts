@@ -2,6 +2,8 @@ import type { AssetPrice, MarketIndex } from '@/types'
 
 const SCANNER_URL = 'https://scanner.tradingview.com/global/scan'
 const ENABLED = process.env.TRADINGVIEW_UNOFFICIAL_ENABLED !== 'false'
+const FRESH_CACHE_MS = 25_000
+const STALE_CACHE_MS = 5 * 60_000
 
 const COLUMNS = [
   'name',
@@ -33,6 +35,15 @@ interface ParsedQuote {
   currency: string
   updateMode: string
 }
+
+interface ScanCacheEntry {
+  quotes: Map<string, ParsedQuote>
+  freshUntil: number
+  staleUntil: number
+}
+
+const scanCache = new Map<string, ScanCacheEntry>()
+const inFlightScans = new Map<string, Promise<Map<string, ParsedQuote>>>()
 
 const STOCK_SUFFIX_EXCHANGES: Record<string, string[]> = {
   WA: ['GPW'],
@@ -80,9 +91,7 @@ function parseRow(row: ScanRow): ParsedQuote | null {
   }
 }
 
-async function scan(tickers: string[]): Promise<Map<string, ParsedQuote>> {
-  if (!ENABLED || tickers.length === 0) return new Map()
-
+async function requestScan(tickers: string[]): Promise<Map<string, ParsedQuote>> {
   const response = await fetch(SCANNER_URL, {
     method: 'POST',
     headers: {
@@ -90,7 +99,7 @@ async function scan(tickers: string[]): Promise<Map<string, ParsedQuote>> {
       'user-agent': 'Mozilla/5.0 Bloomberg-Dashboard/1.0',
     },
     body: JSON.stringify({
-      symbols: { tickers: [...new Set(tickers)].slice(0, 200), query: { types: [] } },
+      symbols: { tickers, query: { types: [] } },
       columns: COLUMNS,
     }),
     cache: 'no-store',
@@ -107,6 +116,37 @@ async function scan(tickers: string[]): Promise<Map<string, ParsedQuote>> {
     if (quote) quotes.set(quote.ticker, quote)
   }
   return quotes
+}
+
+async function scan(tickers: string[]): Promise<Map<string, ParsedQuote>> {
+  if (!ENABLED || tickers.length === 0) return new Map()
+
+  const uniqueTickers = [...new Set(tickers)].slice(0, 200).sort()
+  const cacheKey = uniqueTickers.join(',')
+  const now = Date.now()
+  const cached = scanCache.get(cacheKey)
+  if (cached && cached.freshUntil > now) return new Map(cached.quotes)
+
+  const existingRequest = inFlightScans.get(cacheKey)
+  if (existingRequest) return new Map(await existingRequest)
+
+  const request = requestScan(uniqueTickers)
+  inFlightScans.set(cacheKey, request)
+
+  try {
+    const quotes = await request
+    scanCache.set(cacheKey, {
+      quotes,
+      freshUntil: now + FRESH_CACHE_MS,
+      staleUntil: now + STALE_CACHE_MS,
+    })
+    return new Map(quotes)
+  } catch (error) {
+    if (cached && cached.staleUntil > now) return new Map(cached.quotes)
+    throw error
+  } finally {
+    inFlightScans.delete(cacheKey)
+  }
 }
 
 function candidatesFor(symbol: string, type: 'stock' | 'crypto'): string[] {

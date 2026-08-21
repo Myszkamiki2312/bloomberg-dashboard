@@ -71,6 +71,9 @@ export interface EconomicEvent {
   actual?: string
   forecast?: string
   previous?: string
+  source?: string
+  sourceUrl?: string
+  quality?: DataQuality
 }
 
 export interface MarketSummary {

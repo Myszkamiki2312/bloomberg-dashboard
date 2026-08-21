@@ -27,19 +27,19 @@ export default function AIMarketSummary() {
 
   return (
     <TerminalCard
-      title="AI — Podsumowanie rynku"
-      badge={data?.isDemo ? 'DEMO' : 'AI'}
-      badgeColor={data?.isDemo ? 'amber' : 'cyan'}
+      title={data && !data.isDemo ? 'AI — Podsumowanie rynku' : 'Podsumowanie rynku'}
+      badge={data?.isDemo ? 'REGUŁY' : data ? 'AI' : 'ŁADOWANIE'}
+      badgeColor={data?.isDemo ? 'muted' : data ? 'cyan' : 'muted'}
       className="h-full"
     >
       {isLoading ? (
         <div className="p-3 flex items-center gap-2 text-[11px] text-[#555]">
           <span className="blink text-[#00ff41]">█</span>
-          Analizuję rynek...
+          Analizuję dane rynkowe...
         </div>
       ) : error && !data ? (
         <div className="p-3 flex flex-col gap-1 text-[11px]">
-          <span className="text-[#ff0040]">⚠ Błąd ładowania podsumowania AI</span>
+          <span className="text-[#ff0040]">⚠ Błąd ładowania podsumowania rynku</span>
           <span className="text-[#444] text-[10px]">{error.message ?? 'Sprawdź klucze API (GROQ_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY)'}</span>
         </div>
       ) : data ? (

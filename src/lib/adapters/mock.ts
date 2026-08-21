@@ -128,6 +128,8 @@ export function getMockCalendar(): EconomicEvent[] {
   return CALENDAR_BASE.map(({ daysFromNow, ...rest }) => ({
     ...rest,
     date: businessDays[Math.min(daysFromNow, businessDays.length - 1)].toISOString().split('T')[0],
+    source: 'Dane demonstracyjne',
+    quality: 'demo' as const,
   }))
 }
 

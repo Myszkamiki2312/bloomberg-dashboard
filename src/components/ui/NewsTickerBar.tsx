@@ -2,22 +2,30 @@
 import useSWR from 'swr'
 import type { NewsItem } from '@/types'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
-
-const FALLBACK: NewsItem[] = [
-  { id: '1', title: 'Fed utrzymuje stopy procentowe bez zmian — Powell sygnalizuje ostrożność',    url: '#', source: '', publishedAt: '', summary: '' },
-  { id: '2', title: 'Bitcoin stabilizuje się powyżej 67 000 USD — napływy do ETF rekordowe',      url: '#', source: '', publishedAt: '', summary: '' },
-  { id: '3', title: 'NVIDIA wyniki Q1: przychody AI wzrosły 427% rok do roku',                    url: '#', source: '', publishedAt: '', summary: '' },
-  { id: '4', title: 'PKB Niemiec -0.2% — recesja techniczna potwierdzona przez Destatis',         url: '#', source: '', publishedAt: '', summary: '' },
-  { id: '5', title: 'Apple zapowiada chip M4 — Neural Engine 3x szybszy od M3',                  url: '#', source: '', publishedAt: '', summary: '' },
-  { id: '6', title: 'Ethereum po Dencun: opłaty L2 spadły o ponad 90% w ciągu tygodnia',         url: '#', source: '', publishedAt: '', summary: '' },
-]
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 export default function NewsTickerBar() {
-  const { data: news = [] } = useSWR<NewsItem[]>('/api/news', fetcher, { refreshInterval: 300000, revalidateOnFocus: false })
+  const { data: news = [], error } = useSWR<NewsItem[]>('/api/news', fetcher, {
+    refreshInterval: 300000,
+    revalidateOnFocus: false,
+  })
 
-  const items = news.length > 0 ? news : FALLBACK
-  const doubled = [...items, ...items]
+  if (news.length === 0) {
+    return (
+      <div className="bg-[#050505] border-t border-[#1c1c1c] shrink-0 flex items-center text-[10px]" style={{ height: 22 }}>
+        <span className="text-[9px] font-bold text-[#ffaa00] px-2 tracking-widest">NEWS</span>
+        <span className={error ? 'text-[#ff0040]' : 'text-[#444]'}>
+          {error ? 'Wiadomości chwilowo niedostępne' : 'Pobieranie aktualnych wiadomości…'}
+        </span>
+      </div>
+    )
+  }
+
+  const doubled = [...news, ...news]
 
   return (
     <div

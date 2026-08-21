@@ -29,7 +29,7 @@ Finansowy dashboard inspirowany terminalami rynkowymi — Next.js 15, TypeScript
 | **Ticker tape** | Scrollujący pasek cen u góry ekranu, auto-odświeżanie 30 s |
 | **Wiadomości** | Panel z newsami z Yahoo Finance RSS + fallback mock |
 | **Pasek newsów** | Scrollujące nagłówki na dole ekranu |
-| **Kalendarz ekonomiczny** | Przykładowe zdarzenia makro, zawsze wyraźnie oznaczone jako DEMO |
+| **Kalendarz ekonomiczny** | Bieżące wydarzenia TradingView w czasie warszawskim + wyraźny fallback DEMO |
 | **Alerty cenowe** | Alerty powyżej/poniżej ceny, persystentne w localStorage |
 | **AI Podsumowanie** | Analiza sentymentu uziemiona w bieżącym snapshotcie cen lub jawne podsumowanie regułowe DEMO |
 | **Screener rynku** | Tabela z wolumenem, RSI(14), mini-bar RSI, trendem, zmiennością |
@@ -103,6 +103,8 @@ W trybie DEMO działa w pełni: wykres świecowy, screener, alerty, AI podsumowa
 - **Zakres:** Bieżące kursy akcji, krypto, indeksów, FX i surowców
 
 TradingView jest pierwszym źródłem snapshotów cen. Każdy taki rekord jest oznaczony jako `OPÓŹNIONE` oraz ma źródło `TradingView Scanner — nieoficjalne`, niezależnie od trybu raportowanego przez endpoint. To nie jest oficjalne publiczne API danych TradingView, więc endpoint może zmienić się lub przestać działać bez ostrzeżenia. Wtedy aplikacja automatycznie przechodzi do CoinGecko, Finnhub, Yahoo Finance, a na końcu do danych DEMO.
+
+Ten sam przełącznik steruje kalendarzem ekonomicznym TradingView. Kalendarz pokazuje bieżące wydarzenia dla Polski, USA, strefy euro, Wielkiej Brytanii, Niemiec, Japonii i Chin, przeliczone na czas `Europe/Warsaw`. Przy awarii źródła panel przechodzi do jednoznacznie oznaczonego harmonogramu DEMO.
 
 Adapter można wyłączyć bez zmian w kodzie:
 
@@ -201,17 +203,18 @@ Dla spółek z GPW używaj symbolu Yahoo z sufiksem `.WA`, np. `CDR.WA` lub `PKN
 |------|--------|-------|
 | Bieżące ceny akcji i krypto | TradingView Scanner (nieoficjalny), potem CoinGecko/Finnhub/Yahoo | 30 s |
 | Indeksy globalne (SPX, NDX, VIX, FX, GOLD, OIL…) | TradingView Scanner (nieoficjalny), potem Yahoo Finance | 60 s |
+| Kalendarz ekonomiczny | TradingView Economic Calendar (nieoficjalny), potem fallback DEMO | 15 min |
 | Indeks Strachu & Chciwości | Alternative.me (bezpłatny) | 1 h |
 | BTC dominacja + Total Market Cap | CoinGecko `/global` | 5 min |
 
 ### Dane statyczne / mock
 
-Następujące dane są zawsze mock (brak darmowego API):
+Następujące dane mogą korzystać z fallbacku DEMO, gdy zewnętrzne źródła są niedostępne:
 
 | Dane | Źródło | Uwagi |
 |------|--------|-------|
-| Kalendarz ekonomiczny | Mock — daty dynamiczne | Darmowe API (Investing.com, Trading Economics) wymagają rejestracji |
-| RSI/trend dla akcji w screenerze | Mock OHLCV | Fetchowanie real OHLCV dla 4 symboli jednocześnie przekroczyłoby limity |
+| Kalendarz ekonomiczny | Dynamiczny harmonogram DEMO | Używany tylko po błędzie lub wyłączeniu TradingView |
+| RSI/trend w screenerze | Dynamiczne OHLCV DEMO | Używane tylko, gdy CoinGecko/Finnhub/Yahoo nie zwrócą historii |
 
 ---
 
@@ -491,6 +494,7 @@ bloomberg-dashboard/
     ├── lib/
     │   ├── adapters/
     │   │   ├── tradingview.ts # Bieżące kursy z nieoficjalnego scannera
+    │   │   ├── economicCalendar.ts # Bieżący kalendarz TradingView + walidacja
     │   │   ├── coingecko.ts   # Adapter CoinGecko API
     │   │   ├── finnhub.ts     # Adapter Finnhub API
     │   │   ├── yahoo.ts       # Adapter Yahoo Finance (unofficial)
@@ -521,7 +525,7 @@ Przeglądarka
     │
     ├── SWR (co 5min) → /api/news → Yahoo Finance RSS → mock
     ├── SWR (co 1min) → /api/screener → mock + RSI/trend obliczone server-side
-    ├── SWR (statyczny) → /api/calendar → mock
+    ├── SWR (co 15min) → /api/calendar → TradingView Calendar → mock
     └── SWR (co 5min) → /api/ai-summary → Claude/OpenAI → mock
 ```
 

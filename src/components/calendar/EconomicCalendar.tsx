@@ -6,7 +6,11 @@ import TerminalCard from '@/components/ui/TerminalCard'
 import { formatDate } from '@/lib/utils/formatters'
 import { SkeletonBlock } from '@/components/ui/Skeleton'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
 
 const IMPORTANCE_CONFIG = {
   high: { label: '●●●', color: 'text-[#ff0040]' },
@@ -28,11 +32,23 @@ export default function EconomicCalendar() {
   // Sort days chronologically (ISO date strings sort correctly as strings)
   const sortedDays = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b))
   sortedDays.forEach(([, day]) => day.sort((a, b) => a.time.localeCompare(b.time)))
+  const hasDemoData = events.some(event => event.quality === 'demo')
+  const calendarBadge = events.length === 0 ? 'ŁADOWANIE' : hasDemoData ? 'DEMO' : 'BIEŻĄCE'
 
   return (
-    <TerminalCard title="Kalendarz ekonomiczny" badge="DEMO" badgeColor="muted" className="h-full">
-      <div className="px-3 py-1 border-b border-[#1c1c1c] text-[9px] text-[#ffaa00]">
-        Przykładowy harmonogram · daty i prognozy nie są danymi rynkowymi
+    <TerminalCard
+      title="Kalendarz ekonomiczny"
+      badge={calendarBadge}
+      badgeColor={hasDemoData ? 'muted' : events.length ? 'cyan' : 'muted'}
+      className="h-full"
+    >
+      <div className={clsx(
+        'px-3 py-1 border-b border-[#1c1c1c] text-[9px]',
+        hasDemoData ? 'text-[#ffaa00]' : 'text-[#555]'
+      )}>
+        {hasDemoData
+          ? 'Fallback demonstracyjny · harmonogram nie jest aktualnym kalendarzem'
+          : 'TradingView Economic Calendar · czas Europe/Warsaw · aktualizacja co 15 min'}
       </div>
       {isLoading && events.length === 0 ? (
         <SkeletonBlock rows={6} cols={3} />
@@ -53,7 +69,11 @@ export default function EconomicCalendar() {
               const imp = IMPORTANCE_CONFIG[event.importance] ?? IMPORTANCE_CONFIG.low
               const hasActual = event.actual != null
               return (
-                <div key={event.id} className="px-3 py-1.5 hover:bg-[#111] transition-colors">
+                <div
+                  key={event.id}
+                  className="px-3 py-1.5 hover:bg-[#111] transition-colors"
+                  title={event.source}
+                >
                   <div className="flex items-start gap-2">
                     <span className={clsx('text-[10px] font-mono shrink-0 mt-0.5', imp.color)}>
                       {imp.label}
@@ -92,6 +112,16 @@ export default function EconomicCalendar() {
                           </span>
                         )}
                       </div>
+                      {event.sourceUrl && (
+                        <a
+                          href={event.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[9px] text-[#333] hover:text-[#00cccc] transition-colors"
+                        >
+                          źródło ↗
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>

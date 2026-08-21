@@ -13,7 +13,7 @@ const FN_KEYS: FnItem[] = [
   { key: 'F4', label: 'SCREENER',   panelId: 'p-screener' },
   { key: 'F5', label: 'ALERTY',     panelId: 'p-alerty' },
   { key: 'F6', label: 'KALEND.',    panelId: 'p-kalendarz' },
-  { key: 'F7', label: 'AI',         panelId: 'p-ai' },
+  { key: 'F7', label: 'PODSUM.',    panelId: 'p-ai' },
   { key: 'F8', label: 'RYNEK',      panelId: 'p-rynek' },
 ]
 
@@ -33,7 +33,15 @@ function flashPanel(panelId: string) {
   }, 600)
 }
 
-export default function FunctionBar({ onHelpOpen }: { onHelpOpen?: () => void }) {
+export default function FunctionBar({
+  onHelpOpen,
+  readableMode = false,
+  onReadableModeToggle,
+}: {
+  onHelpOpen?: () => void
+  readableMode?: boolean
+  onReadableModeToggle?: () => void
+}) {
   return (
     <div
       className="flex items-center bg-black border-t border-[#1c1c1c] shrink-0 px-1"
@@ -54,6 +62,15 @@ export default function FunctionBar({ onHelpOpen }: { onHelpOpen?: () => void })
       </div>
       <div className="flex items-center gap-4 px-3 border-l border-[#1c1c1c] text-[10px] text-[#444] shrink-0">
         <span>ESC:ZAMKNIJ</span>
+        <button
+          type="button"
+          onClick={onReadableModeToggle}
+          className="hover:text-[#ffaa00] transition-colors cursor-pointer"
+          title={readableMode ? 'Włącz kompaktowy tekst' : 'Powiększ drobny tekst'}
+          aria-pressed={readableMode}
+        >
+          {readableMode ? 'A−' : 'A+'}
+        </button>
         <button
           onClick={onHelpOpen}
           className="flex items-center gap-1 hover:text-[#ffaa00] transition-colors cursor-pointer"

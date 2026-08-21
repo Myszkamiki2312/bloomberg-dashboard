@@ -144,6 +144,13 @@ body::before {
   font-size: 10px;
 }
 
+/* Optional readability mode: keep the dense terminal layout while lifting
+   the smallest labels by one pixel. The user can toggle it from the UI. */
+html[data-density='comfortable'] .text-\[8px\]  { font-size: 9px !important; }
+html[data-density='comfortable'] .text-\[9px\]  { font-size: 10px !important; }
+html[data-density='comfortable'] .text-\[10px\] { font-size: 11px !important; }
+html[data-density='comfortable'] .text-\[11px\] { font-size: 12px !important; }
+
 /* F-key panel flash */
 @keyframes panel-fn-flash {
   0%   { box-shadow: inset 0 0 0 2px #00ff41; }

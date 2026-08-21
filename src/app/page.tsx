@@ -55,7 +55,7 @@ const PANEL_IDS: Record<string, string> = {
   'Watchlista': 'p-watchlista', 'Wykres': 'p-wykres',
   'Wiadomości': 'p-wiadomosci', 'Screener': 'p-screener',
   'Alerty': 'p-alerty', 'Kalendarz': 'p-kalendarz',
-  'AI Podsumowanie': 'p-ai', 'Rynek Globalny': 'p-rynek',
+  'Podsumowanie': 'p-ai', 'Rynek Globalny': 'p-rynek',
 }
 
 const P = ({ children, label }: { children: React.ReactNode; label: string }) => (
@@ -87,7 +87,13 @@ const COMPACT_NAV = [
   ['p-alerty', 'Alerty'],
 ]
 
-function CompactDashboard() {
+function CompactDashboard({
+  readableMode,
+  onReadableModeToggle,
+}: {
+  readableMode: boolean
+  onReadableModeToggle: () => void
+}) {
   return (
     <main className="compact-dashboard flex-1 min-h-0 overflow-y-auto bg-[#080808]">
       <nav className="sticky top-0 z-30 grid grid-cols-3 sm:grid-cols-6 border-b border-[#1c1c1c] bg-black/95 backdrop-blur-sm">
@@ -101,8 +107,16 @@ function CompactDashboard() {
           </a>
         ))}
       </nav>
-      <div className="px-2 py-1 text-[9px] text-[#555] border-b border-[#1c1c1c]">
-        TRYB KOMPAKTOWY · panele przewijają się pionowo
+      <div className="flex items-center justify-between gap-2 px-2 py-1 text-[9px] text-[#555] border-b border-[#1c1c1c]">
+        <span>TRYB KOMPAKTOWY · panele przewijają się pionowo</span>
+        <button
+          type="button"
+          onClick={onReadableModeToggle}
+          className="border border-[#333] px-1.5 py-0.5 text-[#777] hover:border-[#ffaa00] hover:text-[#ffaa00]"
+          aria-pressed={readableMode}
+        >
+          {readableMode ? 'TEKST A−' : 'TEKST A+'}
+        </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
         <section className="min-h-[440px] md:col-span-2 scroll-mt-14">
@@ -115,7 +129,7 @@ function CompactDashboard() {
           <P label="Wiadomości"><NewsPanel /></P>
         </section>
         <section className="min-h-[390px]">
-          <P label="AI Podsumowanie"><AIMarketSummary /></P>
+          <P label="Podsumowanie"><AIMarketSummary /></P>
         </section>
         <section className="min-h-[390px]">
           <P label="Rynek Globalny"><MarketOverview /></P>
@@ -136,7 +150,23 @@ function CompactDashboard() {
 
 export default function Home() {
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [readableMode, setReadableMode] = useState(false)
   const compact = useCompactLayout()
+
+  useEffect(() => {
+    const enabled = window.localStorage.getItem('bloomberg-readable-mode') === 'true'
+    setReadableMode(enabled)
+    document.documentElement.dataset.density = enabled ? 'comfortable' : 'compact'
+  }, [])
+
+  const toggleReadableMode = () => {
+    setReadableMode(current => {
+      const next = !current
+      window.localStorage.setItem('bloomberg-readable-mode', String(next))
+      document.documentElement.dataset.density = next ? 'comfortable' : 'compact'
+      return next
+    })
+  }
 
   useEffect(() => {
     const FN_MAP: Record<string, string> = {
@@ -172,7 +202,9 @@ export default function Home() {
         <StatusBar isDemo={isDemo} />
         <Ticker />
 
-        {compact ? <CompactDashboard /> : (
+        {compact ? (
+          <CompactDashboard readableMode={readableMode} onReadableModeToggle={toggleReadableMode} />
+        ) : (
         <>
           {/* ── Outer vertical split: main ↕ bottom strip ── */}
           <PanelGroup direction="vertical" className="flex-1 min-h-0" id="outer-layout">
@@ -193,7 +225,7 @@ export default function Home() {
                   <Panel defaultSize={40} minSize={20}>
                     <PanelGroup direction="horizontal" id="bottom-center-layout">
                       <Panel defaultSize={50} minSize={25}>
-                        <P label="AI Podsumowanie"><AIMarketSummary /></P>
+                        <P label="Podsumowanie"><AIMarketSummary /></P>
                       </Panel>
                       <Handle direction="vertical" />
                       <Panel defaultSize={50} minSize={25}>
@@ -234,7 +266,13 @@ export default function Home() {
         )}
 
         <NewsTickerBar />
-        {!compact && <FunctionBar onHelpOpen={() => setShowShortcuts(true)} />}
+        {!compact && (
+          <FunctionBar
+            onHelpOpen={() => setShowShortcuts(true)}
+            readableMode={readableMode}
+            onReadableModeToggle={toggleReadableMode}
+          />
+        )}
       </div>
     </>
   )
