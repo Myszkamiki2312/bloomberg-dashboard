@@ -41,6 +41,10 @@ describe('calculateSMA', () => {
   it('returns 0 for an empty series', () => {
     expect(calculateSMA([], 10)).toBe(0)
   })
+
+  it('averages the whole series when period equals its length', () => {
+    expect(calculateSMA([1, 2, 3], 3)).toBeCloseTo(2)
+  })
 })
 
 describe('calculateVolatility', () => {
@@ -55,6 +59,18 @@ describe('calculateVolatility', () => {
   it('ignores non-positive prices instead of producing -Infinity/NaN', () => {
     const result = calculateVolatility([100, 0, -5, 105])
     expect(Number.isFinite(result)).toBe(true)
+  })
+
+  it('is 0 for a single-price series', () => {
+    expect(calculateVolatility([100])).toBe(0)
+  })
+
+  it('is 0 for an empty series', () => {
+    expect(calculateVolatility([])).toBe(0)
+  })
+
+  it('is 0 when fewer than two prices are positive', () => {
+    expect(calculateVolatility([100, -5, -10])).toBe(0)
   })
 })
 
@@ -71,5 +87,20 @@ describe('getTrend', () => {
   it('is bearish for a steadily falling series', () => {
     const prices = Array.from({ length: 60 }, (_, i) => 200 - i)
     expect(getTrend(prices)).toBe('bearish')
+  })
+
+  it('is neutral when the current price and the two SMAs are not cleanly aligned', () => {
+    // Old high plateau, then a low plateau, then one uptick: current (150) beats the
+    // 20-period SMA (~102.5), but the 20-period SMA is still below the 50-period one
+    // (~161, still pulled up by the old highs) -- neither trend condition holds.
+    const prices = [...Array(30).fill(200), ...Array(19).fill(100), 150]
+    expect(getTrend(prices)).toBe('neutral')
+  })
+
+  it('is neutral when the capped long-window SMA equals the short one (exactly 20 points)', () => {
+    // With exactly 20 points, sma50 falls back to the same 20-point average as sma20,
+    // so sma20 > sma50 can never hold -- neither trend condition is satisfied.
+    const prices = Array.from({ length: 20 }, (_, i) => 100 + i)
+    expect(getTrend(prices)).toBe('neutral')
   })
 })

@@ -88,4 +88,95 @@ describe('parsePortfolioBackup', () => {
     const result = parsePortfolioBackup({ watchlist })
     expect(result.watchlist.length).toBeLessThanOrEqual(100)
   })
+
+  it('truncates an over-long symbol to 12 characters and name to 100', () => {
+    const result = parsePortfolioBackup({
+      watchlist: [{ symbol: 'A'.repeat(50), name: 'B'.repeat(200), type: 'stock' }],
+    })
+    expect(result.watchlist[0].symbol).toHaveLength(12)
+    expect(result.watchlist[0].name).toHaveLength(100)
+  })
+
+  it('defaults an entry\'s name to its symbol when name is missing', () => {
+    const result = parsePortfolioBackup({ watchlist: [{ symbol: 'AAPL', type: 'stock' }] })
+    expect(result.watchlist[0].name).toBe('AAPL')
+  })
+
+  it('keeps coinId only when it is a string, truncated to 100 chars', () => {
+    const result = parsePortfolioBackup({
+      watchlist: [
+        { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', coinId: 'bitcoin' },
+        { symbol: 'ETH', name: 'Ethereum', type: 'crypto', coinId: 12345 },
+      ],
+    })
+    const btc = result.watchlist.find(w => w.symbol === 'BTC')
+    const eth = result.watchlist.find(w => w.symbol === 'ETH')
+    expect(btc?.coinId).toBe('bitcoin')
+    expect(eth?.coinId).toBeUndefined()
+  })
+
+  it('drops a watchlist entry that is not an object (e.g. a bare string or null)', () => {
+    const result = parsePortfolioBackup({
+      watchlist: ['not-an-object', null, { symbol: 'AAPL', name: 'Apple', type: 'stock' }],
+    })
+    expect(result.watchlist).toHaveLength(1)
+  })
+
+  it('caps alerts at 200 entries', () => {
+    const alerts = Array.from({ length: 250 }, (_, i) => ({
+      symbol: 'AAPL', targetPrice: 100 + i, direction: 'above',
+    }))
+    const result = parsePortfolioBackup({
+      watchlist: [{ symbol: 'AAPL', name: 'Apple', type: 'stock' }],
+      alerts,
+    })
+    expect(result.alerts.length).toBeLessThanOrEqual(200)
+  })
+
+  it('generates a fallback id and createdAt for an alert missing them', () => {
+    const result = parsePortfolioBackup({
+      watchlist: [{ symbol: 'AAPL', name: 'Apple', type: 'stock' }],
+      alerts: [{ symbol: 'AAPL', targetPrice: 100, direction: 'above' }],
+    })
+    expect(result.alerts[0].id).toContain('import-')
+    expect(Number.isNaN(new Date(result.alerts[0].createdAt).getTime())).toBe(false)
+  })
+
+  it('preserves an explicit alert id, createdAt, active:false, and triggered:true', () => {
+    const result = parsePortfolioBackup({
+      watchlist: [{ symbol: 'AAPL', name: 'Apple', type: 'stock' }],
+      alerts: [{
+        id: 'my-id', symbol: 'AAPL', targetPrice: 100, direction: 'above',
+        active: false, triggered: true, createdAt: '2020-01-01T00:00:00.000Z',
+      }],
+    })
+    expect(result.alerts[0]).toMatchObject({
+      id: 'my-id', active: false, triggered: true, createdAt: '2020-01-01T00:00:00.000Z',
+    })
+  })
+
+  it('defaults an alert to active:true when the field is missing entirely', () => {
+    const result = parsePortfolioBackup({
+      watchlist: [{ symbol: 'AAPL', name: 'Apple', type: 'stock' }],
+      alerts: [{ symbol: 'AAPL', targetPrice: 100, direction: 'above' }],
+    })
+    expect(result.alerts[0].active).toBe(true)
+  })
+
+  it('preserves a valid string exportedAt, and fabricates one when missing', () => {
+    const withDate = parsePortfolioBackup({
+      watchlist: [{ symbol: 'AAPL', name: 'Apple', type: 'stock' }],
+      exportedAt: '2020-06-15T00:00:00.000Z',
+    })
+    expect(withDate.exportedAt).toBe('2020-06-15T00:00:00.000Z')
+
+    const withoutDate = parsePortfolioBackup({ watchlist: [{ symbol: 'AAPL', name: 'Apple', type: 'stock' }] })
+    expect(Number.isNaN(new Date(withoutDate.exportedAt).getTime())).toBe(false)
+  })
+
+  it('createPortfolioBackup stamps version 1 and the current time', () => {
+    const backup = createPortfolioBackup([], [], 'PLN')
+    expect(backup.version).toBe(1)
+    expect(Number.isNaN(new Date(backup.exportedAt).getTime())).toBe(false)
+  })
 })
