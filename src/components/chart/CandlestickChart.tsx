@@ -31,6 +31,7 @@ function cleanBars(data: OHLCBar[]): OHLCBar[] {
 }
 
 const TIMEFRAMES = [
+  { label: '7D', days: 7 },
   { label: '1M', days: 30 },
   { label: '3M', days: 90 },
   { label: '6M', days: 180 },
@@ -39,7 +40,7 @@ const TIMEFRAMES = [
 
 export default function CandlestickChart() {
   const { selectedSymbol, selectedType } = useStore()
-  const [days, setDays] = useState(90)
+  const [days, setDays] = useState(7)
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
