@@ -10,6 +10,25 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
   // Force HTTPS for 1 year (only effective in production with HTTPS)
   { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+  // Restrict where scripts/styles/images/connections can load from. 'unsafe-inline'
+  // on script-src is required -- Next.js App Router injects an inline bootstrap
+  // script for RSC hydration payloads; a nonce-based CSP would be stricter but
+  // needs per-request middleware, which isn't worth the complexity at this scale.
+  // Still blocks the main XSS vector: loading an attacker-controlled external script.
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' https://finance.yahoo.com data:",
+      "font-src 'self'",
+      "connect-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "frame-ancestors 'none'",
+    ].join('; '),
+  },
 ]
 
 const nextConfig = {
