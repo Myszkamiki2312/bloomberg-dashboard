@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
-import type { IChartApi, ISeriesApi } from 'lightweight-charts'
+import type { IChartApi, ISeriesApi, Time } from 'lightweight-charts'
 import { useStore } from '@/lib/store/useStore'
 import type { OHLCBar } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
@@ -30,6 +30,17 @@ function cleanBars(data: OHLCBar[]): OHLCBar[] {
   return deduped.filter(b => b.close >= median * 0.2 && b.close <= median * 5)
 }
 
+// lightweight-charts gives back a BusinessDay object ({year,month,day}) when
+// bar times were passed in as 'YYYY-MM-DD' strings, or a UTC timestamp
+// (seconds) otherwise -- handle both.
+function formatChartDate(time: Time): string {
+  const date =
+    typeof time === 'object' && time !== null && 'year' in time
+      ? new Date(Date.UTC(time.year, time.month - 1, time.day))
+      : new Date(Number(time) * 1000)
+  return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
 const TIMEFRAMES = [
   { label: '7D', days: 7 },
   { label: '1M', days: 30 },
@@ -44,6 +55,7 @@ export default function CandlestickChart() {
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
+  const tooltipRef = useRef<HTMLDivElement | null>(null)
   const pendingData = useRef<OHLCBar[]>([])
 
   const swrKey = `/api/chart?symbol=${selectedSymbol}&type=${selectedType}&days=${days}`
@@ -123,6 +135,40 @@ export default function CandlestickChart() {
       chartInstance.current = chart
       seriesRef.current = areaSeries
 
+      // Ensure the tooltip's `position: absolute` is relative to this
+      // container, not whatever positioned ancestor happens to be further up.
+      chartRef.current.style.position = 'relative'
+      const tooltip = document.createElement('div')
+      tooltip.style.cssText = `
+        position: absolute; display: none; top: 8px; z-index: 20;
+        padding: 3px 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace;
+        background: #0a0a0a; color: #c8c8c8; border: 1px solid #00ff41;
+        border-radius: 2px; pointer-events: none; white-space: nowrap;
+      `
+      chartRef.current.appendChild(tooltip)
+      tooltipRef.current = tooltip
+
+      chart.subscribeCrosshairMove(param => {
+        const point = param.point
+        if (!param.time || !point || point.x < 0 || point.y < 0 || !chartRef.current) {
+          tooltip.style.display = 'none'
+          return
+        }
+        const seriesValue = param.seriesData.get(areaSeries) as { value?: number } | undefined
+        if (seriesValue?.value == null) {
+          tooltip.style.display = 'none'
+          return
+        }
+
+        tooltip.textContent = `${formatChartDate(param.time)} (${formatPrice(seriesValue.value)})`
+        tooltip.style.display = 'block'
+        const containerWidth = chartRef.current.clientWidth
+        const left = point.x + 12 + tooltip.offsetWidth > containerWidth
+          ? point.x - tooltip.offsetWidth - 12
+          : point.x + 12
+        tooltip.style.left = `${Math.max(0, left)}px`
+      })
+
       if (pendingData.current.length > 0) {
         const clean = cleanBars(pendingData.current)
         if (clean.length > 0) {
@@ -156,6 +202,8 @@ export default function CandlestickChart() {
       chartInstance.current?.remove()
       chartInstance.current = null
       seriesRef.current = null
+      tooltipRef.current?.remove()
+      tooltipRef.current = null
     }
   }, [])
 
