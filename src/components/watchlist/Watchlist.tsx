@@ -188,6 +188,14 @@ export default function Watchlist() {
           const hasPos = !!(entry.quantity && entry.quantity > 0 && entry.avgPrice && entry.avgPrice > 0)
           const position = hasPos ? calculatePosition(entry, p, baseCurrency, fxRates) : null
 
+          // Convert the displayed price into the selected base currency --
+          // falls back to the native price/currency if conversion isn't
+          // possible (unsupported currency or missing FX rate).
+          const convertedPrice = p && isPortfolioCurrency(p.currency)
+            ? convertMoney(p.price, p.currency, baseCurrency, fxRates)
+            : null
+          const displayCurrency = convertedPrice != null ? baseCurrency : p?.currency
+
           return (
             <div key={entry.symbol}>
               <div
@@ -216,7 +224,7 @@ export default function Watchlist() {
                     <div className="font-bold text-[#ffaa00] truncate">{entry.symbol}</div>
                     <div className="text-[9px] text-[#444] truncate">
                       {p?.name && p.name !== entry.symbol ? p.name : entry.name}
-                      {p?.currency ? ` · ${p.currency}` : ''}
+                      {displayCurrency ? ` · ${displayCurrency}` : ''}
                     </div>
                   </div>
                 </div>
@@ -224,7 +232,7 @@ export default function Watchlist() {
                 {/* Price */}
                 <div className="text-right">
                   <div className={clsx('num font-bold', flash === 'up' ? 'text-[#00ff41]' : flash === 'down' ? 'text-[#ff0040]' : 'text-[#c8c8c8]')}>
-                    {p ? formatPrice(p.price) : '—'}
+                    {convertedPrice != null ? formatPrice(convertedPrice) : p ? formatPrice(p.price) : '—'}
                   </div>
                   {position ? (
                     <div className={clsx('text-[9px] num font-bold', position.pnl >= 0 ? 'text-[#00ff41]' : 'text-[#ff0040]')}>
