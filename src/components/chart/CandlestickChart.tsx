@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import type { IChartApi, ISeriesApi, Time } from 'lightweight-charts'
 import { useStore } from '@/lib/store/useStore'
-import type { OHLCBar } from '@/types'
+import type { NewsItem, OHLCBar } from '@/types'
 import TerminalCard from '@/components/ui/TerminalCard'
 import { formatPrice } from '@/lib/utils/formatters'
 import { clsx } from 'clsx'
@@ -41,6 +41,32 @@ function formatChartDate(time: Time): string {
   return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+// Canonical 'YYYY-MM-DD' key so bar times (always strings) and crosshair
+// times (BusinessDay object or timestamp, depending on how lightweight-charts
+// parsed the input) can be matched to the same news-by-day lookup.
+function timeKey(time: Time | string): string {
+  if (typeof time === 'string') return time.slice(0, 10)
+  if (typeof time === 'object' && time !== null && 'year' in time) {
+    return `${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}`
+  }
+  return new Date(Number(time) * 1000).toISOString().slice(0, 10)
+}
+
+function nearestBarTime(bars: OHLCBar[], targetMs: number): string | null {
+  if (!bars.length) return null
+  let closest = bars[0]
+  let closestDiff = Math.abs(new Date(bars[0].time).getTime() - targetMs)
+  for (const bar of bars) {
+    const diff = Math.abs(new Date(bar.time).getTime() - targetMs)
+    if (diff < closestDiff) {
+      closest = bar
+      closestDiff = diff
+    }
+  }
+  // Don't attach news to a bar more than 2 days away from its publish date
+  return closestDiff <= 2 * 86_400_000 ? closest.time : null
+}
+
 const TIMEFRAMES = [
   { label: '7D', days: 7 },
   { label: '1M', days: 30 },
@@ -50,16 +76,28 @@ const TIMEFRAMES = [
 ]
 
 export default function CandlestickChart() {
-  const { selectedSymbol, selectedType } = useStore()
+  const { selectedSymbol, selectedType, watchlist } = useStore()
   const [days, setDays] = useState(7)
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
+  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const pendingData = useRef<OHLCBar[]>([])
+  // Bar time ('YYYY-MM-DD') -> the news headline attached to that day's marker.
+  const newsByTimeRef = useRef<Map<string, NewsItem>>(new Map())
 
   const swrKey = `/api/chart?symbol=${selectedSymbol}&type=${selectedType}&days=${days}`
   const { data, isLoading, error } = useSWR<OHLCBar[]>(swrKey, fetcher, { revalidateOnFocus: false })
+  // Same key NewsPanel uses -- SWR dedupes this into one shared request/cache.
+  const { data: news = [] } = useSWR<NewsItem[]>('/api/news', fetcher, { revalidateOnFocus: false })
+
+  // Heuristic: general market RSS headlines say "Apple", not "AAPL" or "Apple
+  // Inc." -- match on the first word of the watchlist entry's display name.
+  const newsMatchTerm = useMemo(() => {
+    const entry = watchlist.find(w => w.symbol === selectedSymbol)
+    return (entry?.name.split(' ')[0] ?? selectedSymbol).toLowerCase()
+  }, [watchlist, selectedSymbol])
 
   // Clear chart when symbol/days change so stale data from prev symbol isn't shown
   const prevKey = useRef(swrKey)
@@ -107,6 +145,8 @@ export default function CandlestickChart() {
         rightPriceScale: {
           borderColor: '#1a1a1a',
           textColor: '#555',
+          // Leave the bottom 25% of the pane for the volume histogram overlay.
+          scaleMargins: { top: 0.1, bottom: 0.25 },
         },
         timeScale: { borderColor: '#1a1a1a', timeVisible: false },
         width: chartRef.current.clientWidth,
@@ -132,8 +172,17 @@ export default function CandlestickChart() {
         lastValueVisible: true,
       })
 
+      const volumeSeries = chart.addHistogramSeries({
+        priceFormat: { type: 'volume' },
+        priceScaleId: '', // own overlay scale, independent of the price axis
+      })
+      volumeSeries.priceScale().applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+      })
+
       chartInstance.current = chart
       seriesRef.current = areaSeries
+      volumeSeriesRef.current = volumeSeries
 
       // Ensure the tooltip's `position: absolute` is relative to this
       // container, not whatever positioned ancestor happens to be further up.
@@ -160,7 +209,10 @@ export default function CandlestickChart() {
           return
         }
 
-        tooltip.textContent = `${formatChartDate(param.time)} (${formatPrice(seriesValue.value)})`
+        const newsItem = newsByTimeRef.current.get(timeKey(param.time))
+        tooltip.textContent = newsItem
+          ? `${formatChartDate(param.time)} (${formatPrice(seriesValue.value)}) 📰 ${newsItem.title.slice(0, 50)}`
+          : `${formatChartDate(param.time)} (${formatPrice(seriesValue.value)})`
         tooltip.style.display = 'block'
         const containerWidth = chartRef.current.clientWidth
         const left = point.x + 12 + tooltip.offsetWidth > containerWidth
@@ -173,6 +225,11 @@ export default function CandlestickChart() {
         const clean = cleanBars(pendingData.current)
         if (clean.length > 0) {
           areaSeries.setData(clean.map(b => ({ time: b.time, value: b.close })))
+          volumeSeries.setData(clean.map((b, i) => ({
+            time: b.time,
+            value: b.volume ?? 0,
+            color: i === 0 || b.close >= clean[i - 1].close ? 'rgba(0,255,65,0.5)' : 'rgba(255,0,64,0.5)',
+          })))
           chart.timeScale().fitContent()
         }
       }
@@ -202,6 +259,7 @@ export default function CandlestickChart() {
       chartInstance.current?.remove()
       chartInstance.current = null
       seriesRef.current = null
+      volumeSeriesRef.current = null
       tooltipRef.current?.remove()
       tooltipRef.current = null
     }
@@ -222,8 +280,37 @@ export default function CandlestickChart() {
     })
 
     seriesRef.current.setData(clean.map(b => ({ time: b.time, value: b.close })))
+    volumeSeriesRef.current?.setData(clean.map((b, i) => ({
+      time: b.time,
+      value: b.volume ?? 0,
+      color: i === 0 || b.close >= clean[i - 1].close ? 'rgba(0,255,65,0.5)' : 'rgba(255,0,64,0.5)',
+    })))
+
+    // News markers: match general market headlines against this symbol's
+    // display name, then pin each match to its nearest trading day's bar.
+    const relevantNews = newsMatchTerm
+      ? news.filter(n =>
+          n.title.toLowerCase().includes(newsMatchTerm) || n.summary.toLowerCase().includes(newsMatchTerm)
+        )
+      : []
+    const newsByTime = new Map<string, NewsItem>()
+    for (const item of relevantNews) {
+      const barTime = nearestBarTime(clean, new Date(item.publishedAt).getTime())
+      if (barTime && !newsByTime.has(timeKey(barTime))) newsByTime.set(timeKey(barTime), item)
+    }
+    newsByTimeRef.current = newsByTime
+    seriesRef.current.setMarkers(
+      [...newsByTime.keys()].map(time => ({
+        time,
+        position: 'aboveBar' as const,
+        color: '#00cccc',
+        shape: 'circle' as const,
+        text: '📰',
+      }))
+    )
+
     chartInstance.current?.timeScale().fitContent()
-  }, [displayData])
+  }, [displayData, news, newsMatchTerm])
 
   // Use cleaned bars for header stats
   const chartBars = cleanBars(displayData)
